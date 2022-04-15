@@ -1,0 +1,44 @@
+var mapcenter=view.getCenter();
+        document.getElementById("jd").value = center[0];
+            document.getElementById("wd").value = center[1];
+
+        var baidumap = new BMap.Map("allmap");
+        //开始搜索功能的添加
+        function theLocation(){
+            var localSearch = new BMap.LocalSearch(baidumap);
+            //查询城市坐标的方法
+            var keyword = document.getElementById("cityName").value;
+            localSearch.setSearchCompleteCallback(function (searchResult) {
+                var poi = searchResult.getPoi(0);
+                console.log(searchResult);
+                
+                document.getElementById("jingdu").value = poi.point.lng; //获取经度和纬度，将结果显示在文本框中
+                document.getElementById("weidu").value = poi.point.lat; //获取经度和纬度，将结果显示在文本框中
+
+              
+            });
+            localSearch.search(keyword);
+            
+            // var a=document.getElementById('jingdu').value;
+            // var b=document.getElementById('weidu').value;
+            // var place=[a,b];
+
+            var center = view.getCenter();
+            document.getElementById("jd").value = center[0];
+            document.getElementById("wd").value = center[1];
+        }
+
+            /* view.animate({
+                center: [
+                  center[0] + (place[0] - center[0]) / 2,
+                  center[1] + (place[1] - center[1]) / 2
+                ],
+                rotation: Math.PI,
+                easing: ol.easing.easeIn
+            }, {
+                center: shenyang,
+                rotation: 2 * Math.PI,
+                easing: ol.easing.easeOut
+            });
+
+        } */

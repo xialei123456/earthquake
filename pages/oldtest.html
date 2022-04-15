@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,install-scale=1.0">
+    <meta http-equiv="X-UA-Compatible"  content="ie=edge">
+    <title>This is a test</title>
+
+    <link rel="stylesheet" href="libs/ol.css" >
+    <link type="text/css" rel="stylesheet" href="css/style.css" />
+    <script type="application/javascript" src="libs/ol.js"></script>
+    <!-- 开源库jQuery -->
+    <script src="js/jquery-1.11.2.min.js"></script>
+</head>
+
+
+<body>
+
+    <div id="header">
+        <a class="logo">
+            <img src="images/logo.png" />            
+            <span> 地 壳 形 变 监 测 系 统</span>
+        </a>
+    </div>
+
+      <!--添加切换控件区块-->
+    <div id="controls" >
+        <input  type="checkbox"  id="osm" checked />OpenStreetMap
+        <input type="checkbox" id="gdmap"/>高德地图
+        <input  type="checkbox" id="stamen"/>Stamen Map
+    </div>
+
+    <div id="map" class="map"> </div><!--介个是地图的区块-->
+    
+
+  
+<!-- 以下是弹窗部分 -->
+    <div style="display: none;"><!--一环套一环，这个是点击时的第一层，以维也纳为例-->
+        <a class="overlay"  id="whu" target="_blank" href="http://whu.edu.cn/">武汉大学</a><!--超链接获取信息-->
+        <div id="marker"    title="Marker"></div>><!--用来充当维也纳标注的叠置层-->
+        <div id="popup"></div>><!--弹窗加入战斗-->
+    </div>
+
+    <script>
+        var map=new ol.Map({
+            target:'map',
+            layers:[
+                new ol.layer.Tile({source:new ol.source.OSM()}),
+                new ol.layer.Tile({
+                    source: new ol.source.XYZ({url:'http://webst0{1-4}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}'}),
+                    visible:false//先隐藏
+            }),
+                new ol.layer.Tile({
+                    source:new ol.source.Stamen({layer:'watercolor'}),
+                    visible:false//先隐藏
+                })
+            ],
+            view:new ol.View({
+                center:[0,0],
+                projection:'EPSG:3857',
+                zoom:0
+            }),
+           
+            controls:ol.control.defaults().extend([
+            new ol.control.ZoomSlider(),
+
+            new ol.control.ZoomToExtent({
+                extent:[
+                  12728348,3570593,
+                  12732131,3574443
+                  //定位whu
+                ]
+            }),
+
+   
+            
+            new ol.control.OverviewMap({        // 实例化一个OverviewMap类的对象，并加入到地图中,介个就是鹰眼啦
+                    collapsed: false,
+
+                    //教程有误，需要加入新的layers和view，否则鹰眼框与主视图使用统一图层会显示空白
+                    layers:[new ol.layer.Tile({source:new ol.source.OSM()})],
+                    view:new ol.View({
+                        center:[0,0],
+                        projection:'EPSG:3857',
+                        zoom:4
+                    }),
+                })
+        ])
+        });
+
+        // 以下是为切换图层所做的函数部分
+        var conts=document.getElementById('controls');//定义一个事件委托
+        conts.addEventListener('click',(event)=>{
+            if(event.target.checked){     //如果选择了某一种图层
+
+                //通过DOM元素的ID值来判断应该对哪个图层进行显示
+                switch(event.target.id){
+                    case "osm": 
+                        map.getLayers().item(0).setVisible(true);
+                        break;
+                    case "gdmap":
+                        map.getLayers().item(1).setVisible(true);
+                        break;
+                    case "stamen": 
+                        map.getLayers().item(2).setVisible(true);
+                        break;
+                    default: break;
+                }
+            }else{                                         // 如果取消某一复选框
+                // 通过DOM元素的id值来判断应该对哪个图层进行隐藏
+                switch(event.target.id){
+                    case "osm": 
+                        map.getLayers().item(0).setVisible(false);
+                        break;
+                    case "gdmap":
+                        map.getLayers().item(1).setVisible(false);
+                    case "stamen": 
+                        map.getLayers().item(2).setVisible(false);
+                    default: break;
+                }
+            } 
+        });
+
+
+          /*下面这段是测试超链接及点击触发弹窗的代码*/
+          const whuPos=ol.proj.fromLonLat([114.36111,30.54]); //储存坐标至whuPos
+         // 用于充当维也纳标注的叠置层
+         const marker = new ol.Overlay({
+            position: whuPos,
+            positioning: 'center-center',
+            element: document.getElementById('marker'),
+            stopEvent: false
+        })
+        map.addOverlay(marker);     // 将叠置层添加到地图
+
+
+        // 用于充当维也纳超链接标签的叠置层
+        const whu = new ol.Overlay({
+            element: document.getElementById('whu'),
+            position: whuPos
+        });
+        map.addOverlay(whu);
+
+
+        // 用户点击地图就会弹出来的窗口（弹窗）
+        const popup = new ol.Overlay({
+            element: document.getElementById('popup')
+        });
+        map.addOverlay(popup);
+
+        // 为地图绑定click事件，使用户点击地图就能在对应处弹窗
+        map.on('click', function(event){
+            let element = popup.getElement();       // 获取充当弹窗的DOM元素
+            let coordinate = event.coordinate;      // 获取鼠标点击处的坐标
+            // 将地理坐标格式化为半球、度、分和秒的形式
+            let hdms = ol.coordinate.toStringHDMS(ol.proj.toLonLat(coordinate));
+            popup.setPosition(coordinate);          // 将弹窗位置设置为鼠标点击处
+            element.innerHTML = '<p>点击处的经纬度为:</p><code>' + hdms + '</code>';
+        });
+    
+    </script>
+
+<!-- <p>缺德地图test</p>
+<div id=gddmap class="map"></div>
+<script>
+     var map=new ol.Map({
+    target:'gddmap',
+            layers:[new ol.layer.Tile({source: new ol.source.XYZ({
+                    url:'http://webst0{1-4}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}'})})],
+            view:new ol.View({
+                center:[0,0],
+                projection:'EPSG:3857',
+                zoom:0
+            }),
+            controls:ol.control.defaults().extend([
+            new ol.control.ZoomSlider(),
+
+            new ol.control.ZoomToExtent({
+                extent:[
+                  12728348,3570593,
+                  12732131,3574443
+                  //定位whu
+                ]
+            }),
+
+            new ol.control.MousePosition(),
+
+            new ol.control.FullScreen(),
+            
+            new ol.control.OverviewMap({        // 实例化一个OverviewMap类的对象，并加入到地图中
+                    collapsed: false,
+
+                    //教程有误，需要加入新的layers和view，否则鹰眼框与主视图使用统一图层会显示空白
+                    layers:[new ol.layer.Tile({source:new ol.source.OSM()})],
+                    view:new ol.View({
+                        center:[0,0],
+                        projection:'EPSG:3857',
+                        zoom:4
+                    }),
+                }),     
+
+                ]) 
+        });
+</script> -->
+
+
+
+<!-- <div id="realmap"></div>
+ 
+<script>
+    // 首先设置好WMTS瓦片地图的瓦片坐标系
+    let projection = ol.proj.get('EPSG:900913');          // 获取web墨卡托投影坐标系
+    let projectionExtent = projection.getExtent();      // web墨卡托投影坐标系的四至范围
+    let width = ol.extent.getWidth(projectionExtent);   // web墨卡托投影坐标系的水平宽度，单位米
+    let resolutions = [];                               // 瓦片地图分辨率
+    let matrixIds = [];
+    for(let z = 1; z < 18; z++){
+        resolutions[z] = width / (256 * Math.pow(2, z)); 
+        matrixIds[z] = z;
+    }
+    let wmtsTileGrid = new ol.tilegrid.WMTS({
+        origin: ol.extent.getTopLeft(projectionExtent), // 原点（左上角）
+        resolutions: resolutions,                       // 瓦片分辨率
+        matrixIds: matrixIds                            // 矩阵ID，就是瓦片坐标系z维度各个层级的标识
+    }); 
+    
+    // WMTS数据源与地图
+    let wmtsSource = new ol.source.WMTS({
+        url: "http://t0.tianditu.gov.cn/img_w/wmts?tk=你的天地图key",  // 天地图key去官网很容易申请
+        layer: 'img',                  // 图层名
+        version: '1.0.0',                   // WMTS版本
+        // 投影坐标系矩阵集，一定要和WMTS capabilities文档中一致，否则会加载失败
+        matrixSet: 'w',          
+        format: 'tiles',                // 图片格式
+        projection: projection,             // 投影坐标系
+        requestEncoding: 'KVP',             // 请求的编码方式，默认就是'KVP'   
+        // 在WMTS capabilities文档中对应的样式名，一定要写，否则会加载失败  
+        style: 'default',                   
+        tileGrid: wmtsTileGrid              // 投影坐标系
+    });
+    let wmtsLayer = new ol.layer.Tile({
+        source: wmtsSource
+    });
+
+    let map = new ol.Map({
+        target: 'realmap',
+        layers: [
+            wmtsLayer
+        ],
+        view: new ol.View({
+            center: [0, 0],
+            zoom: 1
+        })
+    });
+</script>
+</body>
+</html> -->
