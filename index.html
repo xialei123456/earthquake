@@ -1,5 +1,7 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE HTML
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
     <title>This is a test</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -12,33 +14,31 @@
     <script src="libs/jquery-1.11.2.min.js"></script>
     <!-- 系统首页功能库 -->
     <script type="text/javascript" src="js/init.js"></script>
+
+    
+
     <link href="libs/ol.css" rel="stylesheet" type="text/css" />
     <script src="libs/ol.js" type="text/javascript"></script>
 
+
     <style type="text/css">
-        #searchbar
-        {
+        #searchbar {
             margin-left: 266px;
             margin-top: 11px;
             position: absolute;
         }
-
-
     </style>
+
 </head>
+
 <body>
     <div id="header">
         <a class="logo">
-            <img src="images/logo.png" />            
+            <img src="images/logo.png" />
             <span> 地壳形变监测系统（拟）</span>
         </a>
 
-        <div id="searchbar">
-            城市名: <input id="cityName" type="text" style="width:100px; margin-right:10px;" />
-            经度: <input type="text" id="jingdu" />
-            纬度: <input type="text" id="weidu" />
-            <input type="button" value="查询" onclick="theLocation()" />
-        </div>
+    
     </div>
     <div id="content">
         <div class="leftsidebar_box">
@@ -50,24 +50,20 @@
                 <dt class="first_dt">Functions</dt>
                 <dd onclick="setCore('heatmap', 'function')">地震数据热力图</dd>
                 <dd onclick="setCore('search', 'function')">搜索定位</dd>
-                <dd onclick="setCore('earthquake', 'function')">地震分布</dd>
-                
+                <dd onclick="setCore('earthquake', 'function')">地震信息</dd>
             </dl>
 
-           
+
         </div>
         <div class="iframe_wrapper">
-            <iframe id="container_iframe" name="container_iframe" scrolling="no" >
+            <iframe id="container_iframe" name="container_iframe" scrolling="no">
+
+
             </iframe>
+        </div>
     </div>
-    </div>
 
-    
-    <script>
-        
-    </script>
-
-
-
+   
 </body>
+
 </html>

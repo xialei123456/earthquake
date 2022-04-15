@@ -18,14 +18,14 @@
         <div id="map"></div>
         <div id="r-result">
             城市名: <input id="cityName" type="text" style="width:100px; margin-right:10px;" />
-            <input type="text" id="jingdu" />经度
-            <input type="text" id="weidu" />纬度
+            <input type="number" id="jingdu" />经度
+            <input type="number" id="weidu" />纬度
             <input type="button" value="查询" onclick="theLocation()" />
         </div>
         <div>
-            <button id="spin">旋转定位</button>
-            <input type="text" id="jd"/>
-            <input type="text" id="wd"/>
+            <input type="button" value="查询" id="spin"></input>
+            <input type="number" id="jd"/>
+            <input type="number" id="wd"/>
         </div>
 
         <script>
@@ -69,7 +69,7 @@
                     bar:false
                 }),
 
-                ]) 
+                ])
         });//MAP部分结束
 
 
@@ -82,32 +82,32 @@
             localSearch.setSearchCompleteCallback(function (searchResult) {
                 var poi = searchResult.getPoi(0);
                 console.log(searchResult);
-                lng = poi.point.lng;
-                lat = poi.point.lat;
+                
                 document.getElementById("jingdu").value = poi.point.lng; //获取经度和纬度，将结果显示在文本框中
                 document.getElementById("weidu").value = poi.point.lat; //获取经度和纬度，将结果显示在文本框中
 
               
             });
             localSearch.search(keyword);
-            
         }
 
+        </script>
 
-        
-        var a=document.getElementById('jingdu').value;
-        var b=document.getElementById('weidu').value;
-        var place=[a*1,b*1];
 
-        document.getElementById('spin').onclick = function () {
 
-            var center = view.getCenter();
-            document.getElementById("jd").value = "250";
+        <script>
+            var getspin =document.getElementById("spin");
+            getspin.addEventListener("click",function(){
+                var a=document.getElementById('jingdu').value;
+                var b=document.getElementById('weidu').value;
+                var thisview=map.getView();
+                var center =thisview.getCenter();
+                var shenyang = ol.proj.fromLonLat([a, b]);
 
-            view.animate({
+                thisview.animate({
                 center: [
-                  center[0] + (place[0] - center[0]) / 2,
-                  center[1] + (place[1] - center[1]) / 2
+                  center[0] + (shenyang[0] - center[0]) / 2,
+                  center[1] + (shenyang[1] - center[1]) / 2
                 ],
                 rotation: Math.PI,
                 easing: ol.easing.easeIn
@@ -116,7 +116,9 @@
                 rotation: 2 * Math.PI,
                 easing: ol.easing.easeOut
             });
-        };
+            })
+
+
 
 
         </script>

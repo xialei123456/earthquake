@@ -20,7 +20,7 @@
         }
 
         #menu {
-            height: 50px;
+            height: 15px;
             padding: 5px 10px;
             font-size: 14px;
             font-family: "微软雅黑";
@@ -31,7 +31,7 @@
             text-align: left;
             float: left;
             display: inline;
-            width: 50%;
+            width: 100%;
             height: 100%;
             padding-top: 16px;
         }
@@ -56,10 +56,6 @@
             <label class="lb">热点半径：</label><input type="range" id="radius" min="1" max="50" step="1" value="10" />
             <label class="lb">模糊尺寸：</label><input type="range" id="blur" min="1" max="50" step="1" value="15" />
         </div>
-        <div id="div2">
-            <div>
-               
-            </div>
         </div>
     </div>
     <div id="mapCon">
@@ -67,11 +63,14 @@
     <script type="text/javascript">
         var blur = document.getElementById('blur');
         var radius = document.getElementById('radius');
+
         //创建一个Heatmap图层
         var vector = new ol.layer.Heatmap({
             //矢量数据源（读取本地的KML数据）
             source: new ol.source.Vector({
-                url: '2012_Earthquakes_Mag5.kml',
+                
+                //url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",
+                url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_week_depth.kml",
                 format: new ol.format.KML({
                     extractStyles: false
                 }),
@@ -96,7 +95,9 @@
         var raster = new ol.layer.Tile({
             title: "天地图矢量图层",
             source: new ol.source.XYZ({
+
                 url: "http://t0.tianditu.com/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=3bc6874f2b919aa581635abab7759a3f",
+                
                 wrapX: false
             })
         });
@@ -109,7 +110,16 @@
                 projection:"EPSG:4326",
                 minZoom: 2,
                 zoom: 2
-            })
+            }),
+            controls:ol.control.defaults().extend([
+            new ol.control.FullScreen(),
+           
+                new ol.control.ScaleLine({
+                    units: "metric" ,//设置比例尺单位，degrees、imperial、us、nautical、metric（度量单位）
+                    bar:false
+                }),
+
+                ]) 
         });
 
         //分别为另个参数设置控件（input）添加事件监听，动态设置热点图的参数
