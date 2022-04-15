@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,install-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>This is a test</title>
+    <link rel="stylesheet" href="../../libs/ol.css">
+    <link rel="stylesheet" href="../../css/style.css">
+    <script src="../../libs/ol.js"></script>
+
+    <style>
+        .map {
+            width: 100%;
+            height: 95%;
+            position: absolute;
+        }
+    </style>
+</head>
+
+<body>
+    <div id=gddmap class="map"></div>
+    <script>
+        var map = new ol.Map({
+            target: 'gddmap',
+            layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+            view: new ol.View({
+                center: [0, 0],
+                projection: 'EPSG:3857',
+                zoom: 0
+            }),
+            controls: ol.control.defaults().extend([
+                new ol.control.ZoomSlider(),
+
+                new ol.control.ZoomToExtent({
+                    extent: [
+                        12728348, 3570593,
+                        12732131, 3574443
+                        //定位whu
+                    ]
+                }),
+
+                new ol.control.MousePosition(),
+
+                new ol.control.FullScreen(),
+
+                new ol.control.OverviewMap({        // 实例化一个OverviewMap类的对象，并加入到地图中
+                    collapsed: false,
+
+                    //教程有误，需要加入新的layers和view，否则鹰眼框与主视图使用统一图层会显示空白
+                    layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+                    view: new ol.View({
+                        center: [0, 0],
+                        projection: 'EPSG:3857',
+                        zoom: 4
+                    }),
+                }),
+
+                new ol.control.ScaleLine({
+                    units: "metric",//设置比例尺单位，degrees、imperial、us、nautical、metric（度量单位）
+                    bar: false
+                }),
+
+            ])
+        });
+    </script>
+</body>
+
+</html>

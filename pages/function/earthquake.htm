@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,install-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>This is a test</title>
+    <link rel="stylesheet" href="../../libs/ol.css">
+    <link rel="stylesheet" href="../../css/style.css">
+    <script src="../../libs/ol.js"></script>
+
+    <style>
+        .map {
+            width: 100%;
+            height: 95%;
+            position: absolute;
+        }
+
+        .ol-popup {
+            overflow-y: scroll;
+            background-color: bisque;
+            border: 1PX;
+        }
+
+        .ol-popup-closer {
+            text-align: right;
+
+            display: inline-block;
+
+            width: 100%;
+        }
+    </style>
+
+</head>
+
+</head>
+
+<body>
+    <div id="mainmap" class="map"></div>
+
+    <div id="popup" class="ol-popup">
+        <a href="#" id="popup-closer" class="ol-popup-closer">x</a>
+        <div id="popup-content" style="display: inline-block;text-align:left;"></div>
+    </div>
+
+    <script>
+        var vector = new ol.layer.Vector({
+            //创建地震点要素矢量图层vector
+            source: new ol.source.Vector({
+
+                url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
+                format: new ol.format.GeoJSON(),
+                style: function (feature, resolution) {
+                    return new ol.style.Style({
+                        stroke: new ol.style.Style({
+                            color: '#0000CD',
+                            width: 2
+                        })
+                    })
+                }
+            })
+        })
+
+        var raster = new ol.layer.Tile({ source: new ol.source.OSM() })
+
+        var map = new ol.Map({
+            target: 'mainmap',
+            layers: [raster, vector],//将地图瓦片图层和矢量点要素地震图层叠加显示
+            view: new ol.View({
+                center: [0, 0],
+                projection: 'EPSG:3857',
+                zoom: 2
+            }),
+
+            //下面是一些地图控件
+            controls: ol.control.defaults().extend([
+                new ol.control.ZoomSlider(),
+
+                new ol.control.ZoomToExtent({
+                    extent: [
+                        12728348, 3570593,
+                        12732131, 3574443
+                        //局部定位控件，坐标是经纬度的左下和右上
+                    ]
+                }),
+
+                new ol.control.MousePosition(),//显示鼠标所在位置经纬度的控件，默认位置右上角
+
+                new ol.control.FullScreen(),//全屏控件
+
+                new ol.control.OverviewMap({        // 实例化一个OverviewMap类的对象，并加入到地图中
+                    collapsed: false,
+
+                    //教程有误，需要加入新的layers和view，否则鹰眼框与主视图使用统一图层会显示空白
+                    layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+                    view: new ol.View({
+                        center: [0, 0],
+                        projection: 'EPSG:3857',
+                        zoom: 4
+                    }),
+                }),
+
+                new ol.control.ScaleLine({
+                    units: "metric",//设置比例尺单位，degrees、imperial、us、nautical、metric（度量单位）
+                    bar: false
+                }),
+
+            ])
+        })
+
+        //定义一个select函数，设置选中高亮提示，并加入地图中
+        var selectpoint = new ol.interaction.Select({
+            layers: [vector],
+            multi: true,
+            //hitolerance:4,
+            style: new ol.style.Style({
+                //因为把image打成Image又浪费了我半个小时
+                image: new ol.style.Circle({
+                    radius: 10,
+                    fill: new ol.style.Fill({
+                        color: 'red'
+                    })
+                })
+            })
+        })
+        map.addInteraction(selectpoint)
+
+        //接下来设置popup弹窗显示要素属性信息
+        var popup_container = document.getElementById('popup')
+        var popup_content = document.getElementById('popup-content')
+        var popup_closer = document.getElementById('popup-closer')
+
+        //定义一个overlay用来显示popup
+        var overlay = new ol.Overlay({
+            element: popup_container,
+            autoPan: true,
+            autoPanAnimation: {
+                duration: 250
+            }
+        })
+
+
+        //定义关闭popup的控件
+        popup_closer.onclick = function () {
+            overlay.setPosition(undefined);
+            popup_closer.blur();
+            return false;
+        }
+
+
+        //这里小放一个时间戳转换工具
+        function add0(m){return m<10?'0'+m:m }
+        function format(shijianchuo) {
+            //shijianchuo是整数，否则要parseInt转换
+            var time = new Date(shijianchuo);
+            var y = time.getFullYear();
+            var m = time.getMonth() + 1;
+            var d = time.getDate();
+            var h = time.getHours();
+            var mm = time.getMinutes();
+            var s = time.getSeconds();
+            return y + '-' + add0(m) + '-' + add0(d) + ' ' + add0(h) + ':' + add0(mm) + ':' + add0(s);
+        }
+
+
+
+
+        //设置点击后事件
+        selectpoint.on('select', function (p) {
+            var features = p.target.getFeatures().getArray()//获取真正的featrue元素
+            if (features.length > 0) {
+
+                var obj = features[0];
+                console.log(obj.get('type'));//显示类型
+                var coordinate = p.mapBrowserEvent.coordinate
+                var property = obj.getProperties();//获取真正的属性信息
+                var geometry = obj.getGeometry();//获取地理数据信息
+                var json_obj = eval(obj)
+
+                //下面是摸索到的在geojson里面引用数据的方法，不知道直接用csv会不会简单点
+                var ftype = property["type"]
+                var ftitle = property["title"]
+                var otitle = obj.get('title')//事实证明这种获取方法默认是在properties下的数据
+                var geotype = geometry.getType();//geometry下的数据只能这样引用
+                var geocoordinates = geometry.getCoordinates();
+                var url = property['url']
+                var time = property['time']
+                mytime = format(time)
+
+
+                popup_content.innerHTML = `
+                <strong><p>所选元素的信息如下:</p></strong>
+                <p>类型：`+ ftype + `</p>
+                <p>时间：`+ mytime + `</p>
+                <p>信息：`+ otitle + `</p>
+                <p>type:`+ geotype + `</p>
+                <p>坐标:`+ geocoordinates + `</p>
+                <div>details:<a herf="`+ url + `" target="_self">`+ url + `</a></div>
+                `;
+
+                overlay.setPosition(coordinate);//定义弹出框的位置
+                map.addOverlay(overlay)/*加入地图之中*/
+
+
+            }
+
+        })
+
+
+
+
+
+
+    </script>
+</body>
+
+</html>
