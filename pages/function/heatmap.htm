@@ -73,7 +73,7 @@
             source: new ol.source.Vector({
                 
                 //url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson",
-                url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_week_depth.kml",
+                url: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_month_depth.kml",
                 format: new ol.format.KML({
                     extractStyles: false
                 }),
@@ -96,13 +96,15 @@
         });
         //创建一个瓦片图层作为底图
         var raster = new ol.layer.Tile({
-            title: "天地图矢量图层",
-            source: new ol.source.XYZ({
+            title: "矢量图层",
+           /*  source: new ol.source.XYZ({
 
-                url: "http://t0.tianditu.com/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=3bc6874f2b919aa581635abab7759a3f",
+                //url: "http://t0.tianditu.com/DataServer?T=vec_w&x={x}&y={y}&l={z}&tk=3bc6874f2b919aa581635abab7759a3f",
+                
                 
                 wrapX: false
-            })
+            }) */
+            source: new ol.source.OSM()//使用天地图触发反谷歌协议
         });
         //实例化Map对象加载地图（底图+热点图）
         var map = new ol.Map({
