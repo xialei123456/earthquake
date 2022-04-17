@@ -13,13 +13,13 @@
     <style>
         .map {
             width: 100%;
-            height: 95%;
+            height: 90%;
             position: absolute;
         }
 
         .ol-popup {
-            overflow-y: scroll;
-            background-color: bisque;
+            overflow-y: auto;
+            background-color: rgb(253, 253, 253);
             border: 1PX;
         }
 
@@ -29,6 +29,12 @@
             display: inline-block;
 
             width: 100%;
+        }
+
+        .datachoose {
+            width: fit-content;
+            top: 92.5%;
+            position: absolute;
         }
     </style>
 
@@ -44,29 +50,96 @@
         <div id="popup-content" style="display: inline-block;text-align:left;"></div>
     </div>
 
+    <div class="datachoose">
+        <input type="button" value="近一小时" onclick="sethour()" />
+        <input type="button" value="近一天内" onclick="setday()" />
+        <input type="button" value="近七天内" onclick="setweek()" />
+        <input type="button" value="近一个月" onclick="setmonth()" />
+    </div>
+
     <script>
-        var vector = new ol.layer.Vector({
+        //下面开始分别创建近一小时、一天、一周、一个月的vector图层
+        var vector_hour = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson',
+                format: new ol.format.GeoJSON({ extractStyles: false }),
+
+            }),
+            style: new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 5,
+                    fill: new ol.style.Fill({
+                        color: 'rgba(255,15,15,0.4)'
+                    })
+                })
+            })
+        })
+
+        var vector_day = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',
+                format: new ol.format.GeoJSON({ extractStyles: false }),
+            }),
+            style: new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 5,
+                    fill: new ol.style.Fill({
+                        color: 'rgba(255,15,15,0.4)'
+                    })
+                })
+            })
+        })
+
+        var vector_week = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson',
+                format: new ol.format.GeoJSON({ extractStyles: false }),
+            }),
+            style: new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 5,
+                    fill: new ol.style.Fill({
+                        color: 'rgba(255,15,15,0.4)'
+                    })
+                })
+            })
+        })
+
+        var vector_month = new ol.layer.Vector({
             //创建地震点要素矢量图层vector
             source: new ol.source.Vector({
 
                 url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
-                format: new ol.format.GeoJSON(),
-                style: function (feature, resolution) {
-                    return new ol.style.Style({
-                        stroke: new ol.style.Style({
-                            color: '#0000CD',
-                            width: 2
-                        })
+                format: new ol.format.GeoJSON({ extractStyles: false }),
+            }),
+            //style要放在source外面和它并列啊你这个笨蛋
+            /*  style: function (feature, resolution) {
+                return new ol.style.Style({
+                    stroke: new ol.style.Stroke({//样式要和new的对应啊你这个笨蛋
+                        color: '#B22222',
+                        radius: 5
                     })
-                }
+                })
+            }  */
+
+            style: new ol.style.Style({
+                //因为把image打成Image又浪费了我半个小时
+                image: new ol.style.Circle({
+                    radius: 5,
+                    fill: new ol.style.Fill({
+                        color: 'rgba(255,15,15,0.4)'
+                    })
+                })
             })
+
         })
 
-        var raster = new ol.layer.Tile({ source: new ol.source.OSM() })
+        var raster = new ol.layer.Tile({ source: new ol.source.OSM() })//最后是我们的底图
 
+        //实例化我们的map
         var map = new ol.Map({
             target: 'mainmap',
-            layers: [raster, vector],//将地图瓦片图层和矢量点要素地震图层叠加显示
+            layers: [raster, vector_month],//将地图瓦片图层和矢量点要素地震图层叠加显示
             view: new ol.View({
                 center: [0, 0],
                 projection: 'EPSG:3857',
@@ -79,9 +152,12 @@
 
                 new ol.control.ZoomToExtent({
                     extent: [
-                        12728348, 3570593,
-                        12732131, 3574443
-                        //局部定位控件，坐标是经纬度的左下和右上
+                        /* 12728348, 3570593,
+                        12732131, 3574443 */
+                        //局部定位控件，坐标是经纬度的左下和右上,这里定位到中国
+                        7938658, 2028163,
+                        16125429, 7345809
+
                     ]
                 }),
 
@@ -108,23 +184,10 @@
 
             ])
         })
+    </script>
 
-        //定义一个select函数，设置选中高亮提示，并加入地图中
-        var selectpoint = new ol.interaction.Select({
-            layers: [vector],
-            multi: true,
-            //hitolerance:4,
-            style: new ol.style.Style({
-                //因为把image打成Image又浪费了我半个小时
-                image: new ol.style.Circle({
-                    radius: 10,
-                    fill: new ol.style.Fill({
-                        color: 'red'
-                    })
-                })
-            })
-        })
-        map.addInteraction(selectpoint)
+
+    <script>
 
         //接下来设置popup弹窗显示要素属性信息
         var popup_container = document.getElementById('popup')
@@ -140,7 +203,6 @@
             }
         })
 
-
         //定义关闭popup的控件
         popup_closer.onclick = function () {
             overlay.setPosition(undefined);
@@ -148,9 +210,8 @@
             return false;
         }
 
-
         //这里小放一个时间戳转换工具
-        function add0(m){return m<10?'0'+m:m }
+        function add0(m) { return m < 10 ? '0' + m : m }
         function format(shijianchuo) {
             //shijianchuo是整数，否则要parseInt转换
             var time = new Date(shijianchuo);
@@ -163,55 +224,121 @@
             return y + '-' + add0(m) + '-' + add0(d) + ' ' + add0(h) + ':' + add0(mm) + ':' + add0(s);
         }
 
+        //!!定义一个这样的自己的添加互动的函数很关键。
+        //它让我可以使用它在切换了不同vector之后可以刷新我的select的图层对应到当前图层，只需要在切换函数里使用该函数即可
+        function Myaddinteraction() {
+
+            var presentLayer = map.getLayers().getArray()[1]
+
+            var selectpoint = new ol.interaction.Select({
+
+                layers: [presentLayer],
+                multi: true,
+                //hitolerance:4,
+                style: new ol.style.Style({
+                    //因为把image打成Image又浪费了我半个小时
+                    image: new ol.style.Circle({
+                        radius: 10,
+                        fill: new ol.style.Fill({
+                            color: 'red'
+                        })
+                    })
+                })
+            })
+
+
+            //设置点击后事件
+            selectpoint.on('select', function (p) {
+
+                var features = p.target.getFeatures().getArray()//获取真正的featrue元素
+
+                if (features.length > 0) {
+
+                    var obj = features[0];
+                    console.log(obj.get('type'));//显示类型
+                    var coordinate = p.mapBrowserEvent.coordinate
+                    var property = obj.getProperties();//获取真正的属性信息
+                    var geometry = obj.getGeometry();//获取地理数据信息
+                    var json_obj = eval(obj)
+
+                    //下面是摸索到的在geojson里面引用数据的方法，不知道直接用csv会不会简单点
+                    var ftype = property["type"]
+                    var ftitle = property["title"]
+                    var otitle = obj.get('title')//事实证明这种获取方法默认是在properties下的数据
+                    var geotype = geometry.getType();//geometry下的数据只能这样引用
+                    var geocoordinates = geometry.getCoordinates();
+                    var url = property['url']
+                    var time = property['time']
+                    mytime = format(time)
+
+
+                    popup_content.innerHTML = `
+                    <strong><p>所选元素的信息如下:</p></strong>
+            <p>类型：`+ ftype + `</p>
+            <p>时间：`+ mytime + `</p>
+            <p>信息：`+ otitle + `</p>
+            <p>type:`+ geotype + `</p>
+            <p>坐标:`+ geocoordinates + `</p>
+            <div>
+                details:
+                <a href="`+ url + `">link</a>
+                </div>
+                    
+                    
+                    
+                    `
+
+                    overlay.setPosition(coordinate);//定义弹出框的位置
+                    map.addOverlay(overlay)/*加入地图之中*/
+                }
+
+            })
+
+            map.addInteraction(selectpoint)
+        }
+        Myaddinteraction()
 
 
 
-        //设置点击后事件
-        selectpoint.on('select', function (p) {
-            var features = p.target.getFeatures().getArray()//获取真正的featrue元素
-            if (features.length > 0) {
+    </script>
 
-                var obj = features[0];
-                console.log(obj.get('type'));//显示类型
-                var coordinate = p.mapBrowserEvent.coordinate
-                var property = obj.getProperties();//获取真正的属性信息
-                var geometry = obj.getGeometry();//获取地理数据信息
-                var json_obj = eval(obj)
+    <script>
+        function sethour() {
+            var layers = map.getLayers().getArray()
+            var first = layers[0]
+            var sec = layers[1]
 
-                //下面是摸索到的在geojson里面引用数据的方法，不知道直接用csv会不会简单点
-                var ftype = property["type"]
-                var ftitle = property["title"]
-                var otitle = obj.get('title')//事实证明这种获取方法默认是在properties下的数据
-                var geotype = geometry.getType();//geometry下的数据只能这样引用
-                var geocoordinates = geometry.getCoordinates();
-                var url = property['url']
-                var time = property['time']
-                mytime = format(time)
+            map.removeLayer(sec)
+            map.addLayer(vector_hour)
+            Myaddinteraction()
+        }
+        function setday() {
+            var layers = map.getLayers().getArray()
+            var first = layers[0]
+            var sec = layers[1]
 
+            map.removeLayer(sec)
+            map.addLayer(vector_day)
+            Myaddinteraction()
+        }
+        function setweek() {
+            var layers = map.getLayers().getArray()
+            var first = layers[0]
+            var sec = layers[1]
 
-                popup_content.innerHTML = `
-                <strong><p>所选元素的信息如下:</p></strong>
-                <p>类型：`+ ftype + `</p>
-                <p>时间：`+ mytime + `</p>
-                <p>信息：`+ otitle + `</p>
-                <p>type:`+ geotype + `</p>
-                <p>坐标:`+ geocoordinates + `</p>
-                <div>details:<a herf="`+ url + `" target="_self">`+ url + `</a></div>
-                `;
+            map.removeLayer(sec)
+            map.addLayer(vector_week)
+            Myaddinteraction()
+        }
+        function setmonth() {
+            var layers = map.getLayers().getArray()
+            var first = layers[0]
+            var sec = layers[1]
 
-                overlay.setPosition(coordinate);//定义弹出框的位置
-                map.addOverlay(overlay)/*加入地图之中*/
-
-
-            }
-
-        })
-
-
-
-
-
-
+            map.removeLayer(sec)
+            map.addLayer(vector_month)
+            Myaddinteraction()
+        }
     </script>
 </body>
 
