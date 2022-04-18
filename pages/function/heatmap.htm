@@ -77,7 +77,7 @@
                 format: new ol.format.KML({
                     extractStyles: false
                 }),
-                wrapX:false
+                //wrapX:false
             }),
             //热点半径
             radius: parseInt(radius.value, 10),
@@ -104,7 +104,7 @@
                 
                 wrapX: false
             }) */
-            source: new ol.source.OSM()//使用天地图触发反谷歌协议
+            source: new ol.source.OSM({wrapX: false})//使用天地图触发反谷歌协议
         });
         //实例化Map对象加载地图（底图+热点图）
         var map = new ol.Map({

@@ -19,8 +19,8 @@
 
         .ol-popup {
             overflow-y: auto;
-            background-color: rgb(253, 253, 253);
-            border: 1PX;
+            overflow-x: auto;
+            background-color: rgba(7, 212, 231, 0.8);
         }
 
         .ol-popup-closer {
@@ -28,7 +28,10 @@
 
             display: inline-block;
 
-            width: 100%;
+
+            margin-left: 70%;
+
+
         }
 
         .datachoose {
@@ -46,8 +49,13 @@
     <div id="mainmap" class="map"></div>
 
     <div id="popup" class="ol-popup">
-        <a href="#" id="popup-closer" class="ol-popup-closer">x</a>
-        <div id="popup-content" style="display: inline-block;text-align:left;"></div>
+
+        <div style="width: 100%;">
+            <strong style="text-align: left;margin-left: 10px;width: 10%;">地震信息</strong>
+            <a href="#" id="popup-closer" class="ol-popup-closer">x</a>
+        </div>
+
+        <div id="popup-content" style="display: inline-block;text-align:left; margin: 10px;"></div>
     </div>
 
     <div class="datachoose">
@@ -134,7 +142,13 @@
 
         })
 
-        var raster = new ol.layer.Tile({ source: new ol.source.OSM() })//最后是我们的底图
+        var raster = new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                //url: "http://t3.tianditu.com/DataServer?T=img_w&tk=3bc6874f2b919aa581635abab7759a3f"
+                url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            })
+        })
+        //最后是我们的底图
 
         //实例化我们的map
         var map = new ol.Map({
@@ -155,7 +169,7 @@
                         /* 12728348, 3570593,
                         12732131, 3574443 */
                         //局部定位控件，坐标是经纬度的左下和右上,这里定位到中国
-                        7938658, 2028163,
+                        7938658, 1055130,
                         16125429, 7345809
 
                     ]
@@ -169,7 +183,7 @@
                     collapsed: false,
 
                     //教程有误，需要加入新的layers和view，否则鹰眼框与主视图使用统一图层会显示空白
-                    layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+                    layers: [new ol.layer.Tile({ source: new ol.source.XYZ({url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"}) })],
                     view: new ol.View({
                         center: [0, 0],
                         projection: 'EPSG:3857',
@@ -228,17 +242,17 @@
         //它让我可以使用它在切换了不同vector之后可以刷新我的select的图层对应到当前图层，只需要在切换函数里使用该函数即可
         function Myaddinteraction() {
 
-            var presentLayer = map.getLayers().getArray()[1]
+            var presentLayer = map.getLayers().getArray()[1]//获得当前vector图层
 
+            //设置点击后样式
             var selectpoint = new ol.interaction.Select({
-
                 layers: [presentLayer],
                 multi: true,
                 //hitolerance:4,
                 style: new ol.style.Style({
                     //因为把image打成Image又浪费了我半个小时
                     image: new ol.style.Circle({
-                        radius: 10,
+                        radius: 6,
                         fill: new ol.style.Fill({
                             color: 'red'
                         })
@@ -265,27 +279,30 @@
                     var ftype = property["type"]
                     var ftitle = property["title"]
                     var otitle = obj.get('title')//事实证明这种获取方法默认是在properties下的数据
-                    var geotype = geometry.getType();//geometry下的数据只能这样引用
-                    var geocoordinates = geometry.getCoordinates();
-                    var url = property['url']
+
+                    //properties数据引用
                     var time = property['time']
                     mytime = format(time)
+                    var place = property["place"]
+                    var level = property["mag"]
+
+                    var url = property['url']
+                    //geometry下的数据只能这样引用
+                    var geotype = geometry.getType();
+                    var geocoordinates = geometry.getCoordinates();
 
 
                     popup_content.innerHTML = `
-                    <strong><p>所选元素的信息如下:</p></strong>
-            <p>类型：`+ ftype + `</p>
-            <p>时间：`+ mytime + `</p>
-            <p>信息：`+ otitle + `</p>
-            <p>type:`+ geotype + `</p>
-            <p>坐标:`+ geocoordinates + `</p>
-            <div>
-                details:
-                <a href="`+ url + `">link</a>
-                </div>
                     
                     
-                    
+                    <p>时间：`+ mytime + `</p>
+                    <p>地点：`+ place + `</p>
+                    <p>震级:`+ level + `</p>
+                    <p>坐标:`+ geocoordinates + `</p>
+                    <div>
+                      详情：
+                      <a href="`+ url + `">link</a>
+                    </div>
                     `
 
                     overlay.setPosition(coordinate);//定义弹出框的位置
@@ -306,7 +323,8 @@
         function sethour() {
             var layers = map.getLayers().getArray()
             var first = layers[0]
-            var sec = layers[1]
+            //var sec = layers[1]
+            var sec = map.getLayers().item(1)//事实证明两种引用方法都是欧克的
 
             map.removeLayer(sec)
             map.addLayer(vector_hour)

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,install-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <!--转化http协议的js库-->
+
+    <title>This is a test</title>
+    <link rel="stylesheet" href="../../libs/ol.css">
+
+
+    <!--要用页面单独的格式设置，不然显示会较为麻烦，这里就不引用style.css了-->
+    <style type="text/css">
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            font-family: "微软雅黑";
+        }
+
+        #map {
+            height: 95%;
+            width: 100%;
+        }
+
+        #search {
+            width: 100%;
+            font-size: 14px;
+            top: 565px;
+            overflow: hidden;
+        }
+    </style>
+
+    <script type="text/javascript"
+        src="http://api.map.baidu.com/api?v=2.0&ak=kB5yeVizxgKa82lXGOdvTiEpyzPeEzSx"></script>
+
+    <script src="../../libs/ol.js"></script>
+
+
+</head>
+
+<body>
+    <div class="map" id="map"></div>
+    <script>
+        var X_FIRST = 99.4391667
+        var Y_FIRST = 38.9483333
+        var X_STEP = 8.3333333E-04
+        var Y_STEP = -8.3333333E-04
+
+        var XMAX = 4003
+        var YMAX = 2832
+
+        var X_END = X_FIRST + XMAX * X_STEP
+        var Y_END = Y_FIRST + YMAX * Y_STEP
+
+        var extent = [X_FIRST, Y_FIRST, X_END, Y_END]
+
+        var proj = new ol.proj.Projection({
+            code: 'EPSG:4326',
+            units: 'degrees'
+        })
+
+        var img = new ol.layer.Image({
+            source: new ol.source.ImageStatic({
+                url: "../../data/geo_20211229_20220110.phs.jpg",
+                projection: proj,
+                imageExtent: extent
+            })
+        })
+
+
+        var raster = new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                //url: "http://t3.tianditu.com/DataServer?T=img_w&tk=3bc6874f2b919aa581635abab7759a3f"
+                url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            })
+        })
+
+        var map = new ol.Map({
+            target: 'map',
+            layers: [raster,img],
+            view: new ol.View({
+                center: [0, 0],
+                projection: 'EPSG:4326',
+                zoom: 0
+            })
+        })
+    </script>
+</body>
+
+</html>
