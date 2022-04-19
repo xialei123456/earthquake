@@ -41,7 +41,7 @@ $(function () {
 
  /**系统初始默认页面源码显示 **/
   $(function () {    
-     setCore("mainmap", "map"); //显示默认页面的源码
+     setCore("earthquake", "function"); //显示默认页面的源码
  })
 
 /** 二级菜单项对应功能页面的源码显示 **/
