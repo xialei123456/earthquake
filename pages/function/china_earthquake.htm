@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,install-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>This is a test</title>
+    <link rel="stylesheet" href="../../libs/ol.css">
+    <link rel="stylesheet" href="../../css/style.css">
+    <script src="../../libs/ol.js"></script>
+
+    <style>
+        .map {
+            width: 100%;
+            height: 90%;
+            position: absolute;
+        }
+
+        .ol-popup {
+            overflow-y: auto;
+            overflow-x: auto;
+            background-color: rgba(7, 212, 231, 0.8);
+        }
+
+        .ol-popup-closer {
+            text-align: right;
+
+            display: inline-block;
+
+
+            margin-left: 70%;
+
+
+        }
+
+        .datachoose {
+            width: fit-content;
+            top: 92.5%;
+            position: absolute;
+        }
+    </style>
+
+</head>
+
+</head>
+
+<body>
+    <div id="mainmap" class="map"></div>
+
+    <div id="popup" class="ol-popup">
+
+        <div style="width: 100%;">
+            <strong style="text-align: left;margin-left: 10px;width: 10%;">地震信息</strong>
+            <a href="#" id="popup-closer" class="ol-popup-closer">x</a>
+        </div>
+
+        <div id="popup-content" style="display: inline-block;text-align:left; margin: 10px;"></div>
+    </div>
+
+    <div class="datachoose">
+        <!-- <input type="button" value="近一小时" onclick="sethour()" />
+        <input type="button" value="近一天内" onclick="setday()" />
+        <input type="button" value="近七天内" onclick="setweek()" />
+        <input type="button" value="近一个月" onclick="setmonth()" /> -->
+
+
+        <div id="controls">
+            <strong> 历年数据源选择：</strong>
+            <input type="checkbox" id="2021" checked />2021
+            <input type="checkbox" id="2020" />2020
+            <input type="checkbox" id="2019" />2019
+            <input type="checkbox" id="2018" />2018
+
+        </div>
+    </div>
+
+
+
+    <script>
+        //下面开始分别创建近一小时、一天、一周、一个月的vector图层
+        var china_2021 = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: '../../data/geojson/earthquake/china2021.1.1.0-2022.1.1.23.59.json',
+                format: new ol.format.GeoJSON({ extractStyles: false }),
+
+            }),
+            style: new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 3,
+                    fill: new ol.style.Fill({
+                        color: 'rgba(255,15,15,0.4)'
+                    })
+                })
+            })
+        })
+
+        var china_2020 = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: '../../data/geojson/earthquake/china2020.1.1.0-2021.1.1.23.59.json',
+                format: new ol.format.GeoJSON({ extractStyles: false }),
+            }),
+            style: new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 3,
+                    fill: new ol.style.Fill({
+                        color: 'rgba(205,102,29,0.4)'
+                    })
+                })
+            })
+        })
+
+        var china_2019 = new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: '../../data/geojson/earthquake/china2019.1.1.0-2020.1.1.23.59.json',
+                format: new ol.format.GeoJSON({ extractStyles: false }),
+            }),
+            style: new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 3,
+                    fill: new ol.style.Fill({
+                        color: 'rgba(55,55,255,0.7)'
+                    })
+                })
+            })
+        })
+
+        var china_2018 = new ol.layer.Vector({
+            //创建地震点要素矢量图层vector
+            source: new ol.source.Vector({
+
+                url: '../../data/geojson/earthquake/china2018.1.1.0-2019.1.1.23.59.json',
+                format: new ol.format.GeoJSON({ extractStyles: false }),
+            }),
+            //style要放在source外面和它并列啊你这个笨蛋
+
+
+            style: new ol.style.Style({
+                //因为把image打成Image又浪费了我半个小时
+                image: new ol.style.Circle({
+                    radius: 3,
+                    fill: new ol.style.Fill({
+                        color: 'rgba(124,54,160,0.7)'
+                    })
+                })
+            })
+
+        })
+
+        var raster = new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                //url: "http://t3.tianditu.com/DataServer?T=img_w&tk=3bc6874f2b919aa581635abab7759a3f"
+                url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            })
+        })
+        //最后是我们的底图
+
+        //实例化我们的map
+        var chinaextent = [7938658, 1055130,
+            16125429, 7345809]
+        var map = new ol.Map({
+            target: 'mainmap',
+            layers: [raster,china_2021],//将地图瓦片图层和矢量点要素地震图层叠加显示
+            view: new ol.View({
+                center: ol.extent.getCenter(chinaextent),
+                projection: 'EPSG:3857',
+                zoom: 4
+            }),
+
+            //下面是一些地图控件
+            controls: ol.control.defaults().extend([
+                new ol.control.ZoomSlider(),
+
+                new ol.control.ZoomToExtent({
+                    extent: [
+                        /* 12728348, 3570593,
+                        12732131, 3574443 */
+                        //局部定位控件，坐标是经纬度的左下和右上,这里定位到中国
+                        7938658, 1055130,
+                        16125429, 7345809
+
+                    ]
+                }),
+
+                new ol.control.MousePosition(),//显示鼠标所在位置经纬度的控件，默认位置右上角
+
+                new ol.control.FullScreen(),//全屏控件
+
+                new ol.control.OverviewMap({        // 实例化一个OverviewMap类的对象，并加入到地图中
+                    collapsed: false,
+
+                    //教程有误，需要加入新的layers和view，否则鹰眼框与主视图使用统一图层会显示空白
+                    layers: [new ol.layer.Tile({ source: new ol.source.XYZ({ url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" }) })],
+                    view: new ol.View({
+                        center: ol.extent.getCenter(chinaextent),
+                        //center:[0,0],
+                        projection: 'EPSG:3857',
+                        zoom: 4
+                    }),
+                }),
+
+                new ol.control.ScaleLine({
+                    units: "metric",//设置比例尺单位，degrees、imperial、us、nautical、metric（度量单位）
+                    bar: false
+                }),
+
+            ])
+        })
+    </script>
+
+
+    <script>
+
+        //接下来设置popup弹窗显示要素属性信息
+        var popup_container = document.getElementById('popup')
+        var popup_content = document.getElementById('popup-content')
+        var popup_closer = document.getElementById('popup-closer')
+
+        //定义一个overlay用来显示popup
+        var overlay = new ol.Overlay({
+            element: popup_container,
+            autoPan: true,
+            autoPanAnimation: {
+                duration: 250
+            }
+        })
+
+        //定义关闭popup的控件
+        popup_closer.onclick = function () {
+            overlay.setPosition(undefined);
+            popup_closer.blur();
+            return false;
+        }
+
+        //这里小放一个时间戳转换工具
+        function add0(m) { return m < 10 ? '0' + m : m }
+        function format(shijianchuo) {
+            //shijianchuo是整数，否则要parseInt转换
+            var time = new Date(shijianchuo);
+            var y = time.getFullYear();
+            var m = time.getMonth() + 1;
+            var d = time.getDate();
+            var h = time.getHours();
+            var mm = time.getMinutes();
+            var s = time.getSeconds();
+            return y + '-' + add0(m) + '-' + add0(d) + ' ' + add0(h) + ':' + add0(mm) + ':' + add0(s);
+        }
+
+        //!!定义一个这样的自己的添加互动的函数很关键。
+        //它让我可以使用它在切换了不同vector之后可以刷新我的select的图层对应到当前图层，只需要在切换函数里使用该函数即可
+        function Myaddinteraction() {
+
+            var presentLayer = map.getLayers().getArray()//获得当前vector图层
+
+            //设置点击后样式
+            var selectpoint = new ol.interaction.Select({
+                layers: [presentLayer[1],presentLayer[2],presentLayer[3]],
+                multi: true,
+                //hitolerance:4,
+                style: new ol.style.Style({
+                    //因为把image打成Image又浪费了我半个小时
+                    image: new ol.style.Circle({
+                        radius: 6,
+                        fill: new ol.style.Fill({
+                            color: 'red'
+                        })
+                    })
+                })
+            })
+
+
+            //设置点击后事件
+            selectpoint.on('select', function (p) {
+
+                var features = p.target.getFeatures().getArray()//获取真正的featrue元素
+
+                if (features.length > 0) {
+
+                    var obj = features[0];
+                    console.log(obj.get('type'));//显示类型
+                    var coordinate = p.mapBrowserEvent.coordinate
+                    var property = obj.getProperties();//获取真正的属性信息
+                    var geometry = obj.getGeometry();//获取地理数据信息
+                    var json_obj = eval(obj)
+
+                    //下面是摸索到的在geojson里面引用数据的方法，不知道直接用csv会不会简单点
+                    var ftype = property["type"]
+                    var ftitle = property["title"]
+                    var otitle = obj.get('title')//事实证明这种获取方法默认是在properties下的数据
+
+                    //properties数据引用
+                    var time = property['time']
+                    mytime = format(time)
+                    var place = property["place"]
+                    var level = property["mag"]
+
+                    var url = property['url']
+                    //geometry下的数据只能这样引用
+                    var geotype = geometry.getType();
+                    var geocoordinates = geometry.getCoordinates();
+                    var jwd = ol.proj.transform(geocoordinates, 'EPSG:3857', 'EPSG:4326');
+
+
+                    popup_content.innerHTML = `
+                    
+                    
+                    <p>时间：`+ mytime + `</p>
+                    <p>地点：`+ place + `</p>
+                    <p>震级:`+ level + `</p>
+                    <p>坐标:`+ jwd + `</p>
+                    <div>
+                      详情：
+                      <a href="`+ url + `">link</a>
+                    </div>
+                    `
+
+                    overlay.setPosition(coordinate);//定义弹出框的位置
+                    map.addOverlay(overlay)/*加入地图之中*/
+                }
+
+            })
+
+            map.addInteraction(selectpoint)
+        }
+        Myaddinteraction()
+
+
+
+    </script>
+
+    <!--   <script>//后用下面的复选框代替了功能
+        function sethour() {
+            var layers = map.getLayers().getArray()
+            var first = layers[0]
+            //var sec = layers[1]
+            var sec = map.getLayers().item(1)//事实证明两种引用方法都是欧克的
+
+            map.removeLayer(sec)
+            map.addLayer(vector_hour)
+            Myaddinteraction()
+        }
+        function setday() {
+            var layers = map.getLayers().getArray()
+            var first = layers[0]
+            var sec = layers[1]
+
+            map.removeLayer(sec)
+            map.addLayer(vector_day)
+            Myaddinteraction()
+        }
+        function setweek() {
+            var layers = map.getLayers().getArray()
+            var first = layers[0]
+            var sec = layers[1]
+
+            map.removeLayer(sec)
+            map.addLayer(vector_week)
+            Myaddinteraction()
+        }
+        function setmonth() {
+            var layers = map.getLayers().getArray()
+            var first = layers[0]
+            var sec = layers[1]
+
+            map.removeLayer(sec)
+            map.addLayer(vector_month)
+            Myaddinteraction()
+        }
+    </script> -->
+
+    <script>//复选框实现单切数据
+        var check1 = document.getElementById('2021')
+        var check2 = document.getElementById('2020')
+        var check3 = document.getElementById('2019')
+        var check4 = document.getElementById('2018')
+
+        let controls = document.getElementById('controls')
+        controls.addEventListener('click', (event) => {
+            if (event.target.checked) {
+                switch (event.target.id) {
+                    case "2021":
+                        map.addLayer(china_2021)
+                        Myaddinteraction()
+                        break;
+                    case "2020":
+                        map.addLayer(china_2020)
+                        Myaddinteraction()
+                        break;
+                    case "2019":
+                        map.addLayer(china_2019)
+                        Myaddinteraction()
+                        break;
+                    case "2018":
+                        map.addLayer(china_2018)
+                        Myaddinteraction()
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            else {
+                switch (event.target.id) {
+                    case "2021":
+                        map.removeLayer(china_2021)
+                        Myaddinteraction()
+                        break;
+                    case "2020":
+                        map.removeLayer(china_2020)
+                        Myaddinteraction()
+                        break;
+                    case "2019":
+                        map.removeLayer(china_2019)
+                        Myaddinteraction()
+                        break;
+                    case "2018":
+                        map.removeLayer(china_2018)
+                        Myaddinteraction()
+                        break;
+                }
+            }
+        })
+    </script>
+
+</body>
+
+</html>
