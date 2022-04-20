@@ -59,11 +59,28 @@
     </div>
 
     <div class="datachoose">
-        <input type="button" value="近一小时" onclick="sethour()" />
+        <!-- <input type="button" value="近一小时" onclick="sethour()" />
         <input type="button" value="近一天内" onclick="setday()" />
         <input type="button" value="近七天内" onclick="setweek()" />
-        <input type="button" value="近一个月" onclick="setmonth()" />
+        <input type="button" value="近一个月" onclick="setmonth()" /> -->
+
+        <div id="controls">
+            <input type="checkbox" id="hour" />近一小时
+            <input type="checkbox" id="day" />近一天内
+            <input type="checkbox" id="week" />近一周内
+            <input type="checkbox" id="month" checked />近一个月
+
+            震级 >
+            <input type="number" step="0.1" value="1.0" id="selectLevel" />
+            <input type="button" value="筛选" onclick="magselect()" id="select" />
+            
+        </div>
+        
+            
+        
     </div>
+
+
 
     <script>
         //下面开始分别创建近一小时、一天、一周、一个月的vector图层
@@ -121,14 +138,7 @@
                 format: new ol.format.GeoJSON({ extractStyles: false }),
             }),
             //style要放在source外面和它并列啊你这个笨蛋
-            /*  style: function (feature, resolution) {
-                return new ol.style.Style({
-                    stroke: new ol.style.Stroke({//样式要和new的对应啊你这个笨蛋
-                        color: '#B22222',
-                        radius: 5
-                    })
-                })
-            }  */
+
 
             style: new ol.style.Style({
                 //因为把image打成Image又浪费了我半个小时
@@ -143,21 +153,34 @@
         })
 
         var raster = new ol.layer.Tile({
-            source: new ol.source.XYZ({
-                //url: "http://t3.tianditu.com/DataServer?T=img_w&tk=3bc6874f2b919aa581635abab7759a3f"
-                url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-            })
+            // source: new ol.source.XYZ({
+            //     //url: "http://t3.tianditu.com/DataServer?T=img_w&tk=3bc6874f2b919aa581635abab7759a3f"
+            //     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            // })
+            source: new ol.source.OSM()
         })
         //最后是我们的底图
 
         //实例化我们的map
+        var chinaextent = [7938658, 1055130,
+            16125429, 7345809]
+
+        //用来筛选的图层
+        var newlayer = new ol.layer.Vector({
+            source: new ol.source.Vector({
+
+                url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
+                format: new ol.format.GeoJSON({ extractStyles: false }),
+            }),
+        })
         var map = new ol.Map({
             target: 'mainmap',
-            layers: [raster, vector_month],//将地图瓦片图层和矢量点要素地震图层叠加显示
+            layers: [raster, newlayer, vector_month],//将地图瓦片图层和矢量点要素地震图层叠加显示
             view: new ol.View({
+                //center: ol.extent.getCenter(chinaextent),
                 center: [0, 0],
                 projection: 'EPSG:3857',
-                zoom: 2
+                zoom: 0
             }),
 
             //下面是一些地图控件
@@ -183,11 +206,15 @@
                     collapsed: false,
 
                     //教程有误，需要加入新的layers和view，否则鹰眼框与主视图使用统一图层会显示空白
-                    layers: [new ol.layer.Tile({ source: new ol.source.XYZ({url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"}) })],
+                    layers: [new ol.layer.Tile({
+                        //source: new ol.source.XYZ({ url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" }) 
+                        source: new ol.source.OSM()
+                    })],
                     view: new ol.View({
+                        //center: ol.extent.getCenter(chinaextent),
                         center: [0, 0],
                         projection: 'EPSG:3857',
-                        zoom: 4
+                        zoom: 0
                     }),
                 }),
 
@@ -198,10 +225,12 @@
 
             ])
         })
+        newlayer.setVisible(false)
     </script>
 
 
     <script>
+        var copyLayer
 
         //接下来设置popup弹窗显示要素属性信息
         var popup_container = document.getElementById('popup')
@@ -240,9 +269,14 @@
 
         //!!定义一个这样的自己的添加互动的函数很关键。
         //它让我可以使用它在切换了不同vector之后可以刷新我的select的图层对应到当前图层，只需要在切换函数里使用该函数即可
+        var panduan=0
         function Myaddinteraction() {
 
-            var presentLayer = map.getLayers().getArray()[1]//获得当前vector图层
+            
+            //var presentLayer = map.getLayers().getArray()[2]//获得当前vector图层
+
+            if(panduan==0){var presentLayer = map.getLayers().getArray()[2]}
+            if(panduan==1){var presentLayer = map.getLayers().getArray()[1]}
 
             //设置点击后样式
             var selectpoint = new ol.interaction.Select({
@@ -268,6 +302,7 @@
 
                 if (features.length > 0) {
 
+
                     var obj = features[0];
                     console.log(obj.get('type'));//显示类型
                     var coordinate = p.mapBrowserEvent.coordinate
@@ -290,6 +325,7 @@
                     //geometry下的数据只能这样引用
                     var geotype = geometry.getType();
                     var geocoordinates = geometry.getCoordinates();
+                    var jwd = ol.proj.transform(geocoordinates, 'EPSG:3857', 'EPSG:4326');
 
 
                     popup_content.innerHTML = `
@@ -298,7 +334,7 @@
                     <p>时间：`+ mytime + `</p>
                     <p>地点：`+ place + `</p>
                     <p>震级:`+ level + `</p>
-                    <p>坐标:`+ geocoordinates + `</p>
+                    <p>坐标:`+ jwd + `</p>
                     <div>
                       详情：
                       <a href="`+ url + `">link</a>
@@ -319,7 +355,7 @@
 
     </script>
 
-    <script>
+    <!--   <script>//后用下面的复选框代替了功能
         function sethour() {
             var layers = map.getLayers().getArray()
             var first = layers[0]
@@ -357,7 +393,155 @@
             map.addLayer(vector_month)
             Myaddinteraction()
         }
+    </script> -->
+
+    <script>//复选框实现单切数据
+        var checkhour = document.getElementById('hour')
+        var checkday = document.getElementById('day')
+        var checkweek = document.getElementById('week')
+        var checkmonth = document.getElementById('month')
+
+        let controls = document.getElementById('controls')
+        controls.addEventListener('click', (event) => {
+            if (event.target.checked) {
+                panduan=1
+                newlayer.setVisible(false)
+                switch (event.target.id) {
+                    case "hour":
+                        checkday.checked = false
+                        checkweek.checked = false
+                        checkmonth.checked = false
+
+                        var layers = map.getLayers().getArray()
+                        var first = layers[0]
+                        //var sec = layers[1]
+                        var sec = map.getLayers().item(1)//事实证明两种引用方法都是欧克的
+
+
+
+                        map.removeLayer(layers[2])
+                        map.addLayer(vector_hour)
+
+
+                        vector_hour.setVisible(true);
+                        
+                        Myaddinteraction()
+
+                        break;
+                    case "day":
+                        checkhour.checked = false
+                        checkweek.checked = false
+                        checkmonth.checked = false
+
+                        var layers = map.getLayers().getArray()
+                        var first = layers[0]
+                        var sec = layers[1]
+
+
+                        map.removeLayer(layers[2])
+                        map.addLayer(vector_day)
+
+
+                        vector_day.setVisible(true);
+                        
+                        Myaddinteraction()
+
+
+                        break;
+                    case "week":
+                        checkhour.checked = false
+                        checkday.checked = false
+                        checkmonth.checked = false
+
+                        var layers = map.getLayers().getArray()
+
+
+
+                        map.removeLayer(layers[2])
+                        map.addLayer(vector_week)
+
+                        vector_week.setVisible(true);
+                        
+                        Myaddinteraction()
+
+
+                        break;
+                    case "month":
+                        checkhour.checked = false
+                        checkday.checked = false
+                        checkweek.checked = false
+
+                        var layers = map.getLayers().getArray()
+
+
+
+                        map.removeLayer(layers[2])
+                        map.addLayer(vector_month)
+
+
+                        vector_month.setVisible(true);
+                        
+                        Myaddinteraction()
+
+
+                        break;
+
+                    default:
+                        break;
+                }
+               
+            }
+            else{
+                if(event.target.id=="select"||event.target.id=="selectLevel"){}
+                else{var layers = map.getLayers().getArray()
+                layers[2].setVisible(false)
+                layers[1].setVisible(false)}
+                
+            }
+        })
     </script>
+
+    <script>
+
+
+
+
+        function magselect() {
+
+            var layer = map.getLayers().getArray()[2]
+            var source = layer.getSource()
+            var style = layer.getStyle()
+
+
+
+            newlayer.setStyle(style)
+            var newsource = newlayer.getSource()
+            newsource.clear()
+
+            var searchFeatures = source.getFeatures()
+
+
+
+            //var copysource=copyLayer.getSource()
+
+            var value = document.getElementById('selectLevel').value
+
+            searchFeatures.forEach(function (item) {
+
+                var level = item.get('mag')
+                console.log(level)
+                if (level >= value) {
+                    newsource.addFeature(item)
+                }
+            });
+
+
+            layer.setVisible(false);
+            newlayer.setVisible(true);
+        }
+
+    </script>
+
 </body>
 
 </html>
