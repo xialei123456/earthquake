@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+
+  <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>
+  <link type="text/css" rel="stylesheet" href="libs/font-awesome-4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="libs/ol.css">
+  <script src="libs/ol.js"></script>
+  <!-- 开源库jQuery -->
+  <script src="libs/jquery-1.11.2.min.js"></script>
+</head>
+<style>
+  #header {
+    width: 100%;
+    height: 50px;
+    z-index: 0;
+    position: absolute;
+    background-color: #aeb8c1;
+    background-image: url('images/title.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+  }
+
+  #header #title {
+    font-size: 28px;
+    font-family: "宋体";
+    color: rgb(0, 0, 0);
+    text-align: center;
+    height: 60px;
+    line-height: 51px;
+
+
+  }
+
+  * {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    text-decoration: none;
+
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -400px;
+    width: 400px;
+    height: 100%;
+    background: #084561;
+    transition: all .5s ease;
+    z-index: 1;
+  }
+
+  .sidebar .top {
+    font-size: 22px;
+    color: #fff;
+    text-align: center;
+    height: 60px;
+    line-height: 51px;
+    background-color: rgb(14, 44, 70);
+    user-select: none;
+
+  }
+
+  .sidebar ul a {
+    display: block;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    line-height: 45px;
+    font-size: 18px;
+    color: #fff;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(255, 255, 255, .1);
+    border-bottom: 1px solid rgb(17, 73, 118);
+    transition: .4s;
+  }
+
+  ul li:hover a {
+    padding-left: 30px;
+    color: #5587f4;
+    border-left: 5px solid #5587f4;
+    transition: all 0.5s;
+  }
+
+  .sidebar ul a i {
+    margin-right: 16px;
+  }
+
+  #check {
+    display: none;
+    margin-top: 20px;
+  }
+
+  label #btn,
+  label #cancel {
+    position: fixed;
+    cursor: pointer;
+    background-color: #0c587e;
+    border-radius: 3px;
+  }
+
+  label #btn {
+    left: 5px;
+    top: 7px;
+    font-size: 25px;
+    color: #fff;
+    padding: 6px 10px;
+    transition: all .5s;
+    z-index: 1;
+  }
+
+  label #cancel {
+    z-index: 2;
+    left: -145px;
+    top: 10px;
+    font-size: 25px;
+    color: rgb(188, 190, 223);
+    padding: 4px 9px;
+    transition: all .5s ease;
+  }
+
+  #check:checked~.sidebar {
+    left: 0;
+  }
+
+  #check:checked~label #btn {
+    left: 10px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #check:checked~label #cancel {
+    left: 350px;
+    z-index: 2;
+
+  }
+
+  .content {
+
+    height: 100vh;
+    transition: all .5s;
+    display: flex;
+    justify-content: space-around;
+    z-index: 0;
+  }
+
+  .map {
+    height: 100%;
+    width: 75%;
+    margin-top: 55px;
+    margin-left: 5px;
+    margin-right: 5px;
+  }
+
+  #check:checked~.content {
+    margin-left: 400px;
+  }
+
+
+
+  #datadisplay {
+    background-color: rgba(42, 165, 85, 0.2);
+    margin-right: 5px;
+    width: 25%;
+    height: 100%;
+    margin-top: 55px
+  }
+</style>
+
+<body>
+
+  <div id="header">
+
+    <h1 id="title"> <strong>地壳形变数据在线监测管理系统</strong></h1>
+  </div>
+
+  <input type="checkbox" id="check">
+  <label for="check">
+    <i class="fa fa-bars" id="btn"> 图层管理</i>
+    <i class="fa fa-times" id="cancel"></i>
+  </label>
+  <div class="sidebar">
+    <div class="top">Hi~</div>
+    <ul>
+      <li>
+      <li>
+        <a href="#">
+          <!-- <i class="fa fa-address-book"></i> -->
+          <strong style="font-size: larger;">实时地震</strong>
+          <input type="checkbox" id="setV" checked>
+        </a>
+      </li>
+
+      <div id="earthquake_C_one">
+        <a>近一小时 <input type="checkbox" id="hour"> &nbsp
+          近一天 <input type="checkbox" id="day">&nbsp
+          近一周 <input type="checkbox" id='week'>&nbsp
+          近一个月 <input type="checkbox" id='month'>&nbsp
+        </a>
+      </div>
+
+      </li>
+
+      <li><a href="#">
+          <!-- <i class="fa fa-telegram"></i> -->
+          <strong style="font-size: larger;">中国区域地震（近五年）</strong>
+          <input type="checkbox" id="setV_C" checked>
+        </a>
+      </li>
+
+      <div id="earthquake_C_two">
+        <a>
+          震级：&nbsp
+          2.5-4.5 <input type="checkbox" id="25"> &nbsp
+          4.5-6.5 <input type="checkbox" id="45">&nbsp
+          6.5+<input type="checkbox" id='65'>&nbsp
+        </a>
+      </div>
+
+      <li><a href="#">
+          <!-- <i class="fa fa-address-book"></i> -->
+          <strong style="font-size: larger;">InSAR形变图（选中指定地震）</strong>
+          <input type="checkbox" id="set_InSAR" checked>
+        </a>
+      </li>
+
+      <div id="InSAR">
+        <a>
+
+          方位一 <input type="checkbox" id="insar_1"> &nbsp
+          方位二 <input type="checkbox" id="insar_2">&nbsp
+          方位三 <input type="checkbox" id='insar_3'>&nbsp
+          方位四 <input type="checkbox" id='insar_4'>&nbsp
+        </a>
+      </div>
+
+      <li><a href="#">
+          <!-- <i class="fa fa-telegram"></i> -->
+          <strong style="font-size: larger;">中国区域形变场</strong>
+          <input type="checkbox" id="set_Velocity">
+        </a></li>
+      <li><a href="#"><i class="fa fa-address-book"></i>关于我们</a></li>
+    </ul>
+  </div>
+
+
+  <div class="content">
+    <div class="map" id="map"> </div>
+
+
+
+    <!-- 弹窗要素 -->
+    <div id="popup" class="ol-popup" style="background-color: rgba(255,255,255,0.7);">
+
+      <div style="width: 100%;">
+        <strong style="text-align: left;margin-left: 10px;width: 10%;">地震信息</strong>
+        <a href="#" id="popup-closer" class="ol-popup-closer" style="float: right;">x</a>
+      </div>
+
+      <div id="popup-content" style="display: inline-block;text-align:left; margin: 10px;"></div>
+    </div>
+
+    <!-- 右侧展示功能区 -->
+    <div id="datadisplay">
+
+      <p style="margin: 10px; text-align: center;"><strong>中国区域地震筛选与分析</strong></p>
+      <hr>
+      <p style="margin: 5px;">时间筛选：</p>
+      <p style="margin: 10px;">
+        起：<input type="number" style="width:50px" value="2017" id="start_y">年<input type="number" style="width:30px"
+          value="10" id="start_m">月<input type="number" style="width:30px" value="10" id="start_d"> 日
+      </p>
+      <p style="margin: 10px;">
+        止：<input type="number" style="width:50px" value="2022" id="end_y">年<input type="number" style="width:30px"
+          value="10" id="end_m">月<input type="number" style="width:30px" value="10" id="end_d"> 日
+      </p>
+      <p style="margin: 5px;">震级筛选：</p>
+      <p style="margin:8px;">
+        Mag:<input type="number" style="width:35px" value="2.5" id="start_Mag" step="0.1">&nbsp至&nbsp<input
+          type="number" style="width:35px" value="6.5" id="end_Mag" step="0.1">
+      </p>
+      <hr>
+      <input type="button" value="筛选并显示" onclick="selectAdd()"
+        style="margin-top: 5px;margin-left: 5px; height: 30px; width: 88px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+      <input type="button" value="移除并恢复" onclick="selectOff()"
+        style="margin-top: 5px; margin-bottom: 5px; height: 30px; width: 88px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+      <input type="button" value="绘制统计图" onclick="draw()"
+        style="margin-top: 5px; height: 30px; width: 88px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+      <input type="button" value="保存数据" onclick="selectSave()"
+        style="margin-top: 5px; height: 30px; width: 70px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+
+
+
+
+      <div id="Mag_Echarts_1" style="margin-left:5px; width: 100%; height: 250px; background-color: beige;"></div>
+      <div id="Mag_Echarts_2" style="margin-left:5px; width: 100%; height: 250px; background-color: beige;"></div>
+      <hr>
+      <div id="data_detail" style="display: inline-block;text-align:left; margin: 10px; height: 150px; width: 100%;">
+      </div>
+
+
+    </div>
+  </div>
+</body>
+
+<script>
+  //用于筛选的图层
+  var select_layer = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+    })
+  })
+  var chinaextent = [12031983.4973, 6.1474, 12032067.4593, 62.1428]
+  var map = new ol.Map({
+    target: 'map',
+    layers: [new ol.layer.Tile({ source: new ol.source.OSM() }), select_layer],
+    view: new ol.View({
+      center: ol.extent.getCenter(chinaextent),
+      projection: 'EPSG:4326',
+      zoom: 4.5
+    }),
+    controls: ol.control.defaults().extend([
+      new ol.control.ZoomSlider(),
+
+      new ol.control.ZoomToExtent({
+        extent:
+          chinaextent
+        //定位
+
+      }),
+
+      new ol.control.MousePosition(),
+
+      new ol.control.FullScreen(),
+
+      new ol.control.OverviewMap({        // 实例化一个OverviewMap类的对象，并加入到地图中
+        collapsed: false,
+
+        //教程有误，需要加入新的layers和view，否则鹰眼框与主视图使用统一图层会显示空白
+        layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+        view: new ol.View({
+          center: [0, 0],
+          projection: 'EPSG:4326',
+          zoom: 4
+        }),
+      }),
+
+      new ol.control.ScaleLine({
+        units: "metric",//设置比例尺单位，degrees、imperial、us、nautical、metric（度量单位）
+        bar: false
+      }),
+
+    ])
+  });
+</script>
+
+
+<!-- 实时地震切换脚本区 -->
+<script>
+  var vector_hour = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson',
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+
+    }),
+    style: new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({
+          color: 'rgba(255,15,15,0.4)'
+        })
+      })
+    })
+  })
+
+  var vector_day = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson',
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+    }),
+    style: new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({
+          color: 'rgba(255,15,15,0.4)'
+        })
+      })
+    })
+  })
+
+  var vector_week = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson',
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+    }),
+    style: new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({
+          color: 'rgba(255,15,15,0.4)'
+        })
+      })
+    })
+  })
+
+  var vector_month = new ol.layer.Vector({
+    //创建地震点要素矢量图层vector
+    source: new ol.source.Vector({
+
+      url: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson',
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+    }),
+    //style要放在source外面和它并列啊你这个笨蛋
+
+
+    style: new ol.style.Style({
+      //因为把image打成Image又浪费了我半个小时
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({
+          color: 'rgba(255,15,15,0.4)'
+        })
+      })
+    })
+
+  })
+
+  /*    function E_update(){
+      var setv=document.getElementById('setV')
+      if(setv.checked==ture){
+        setv.checked=false
+      }
+      else{
+        setv.checked=true
+      }
+    }  */
+  var setv = document.getElementById('setV')
+  setv.addEventListener('click', (event) => {
+    if (event.target.checked) {
+      vector_hour.setVisible(true)
+      vector_day.setVisible(true)
+      vector_week.setVisible(true)
+      vector_month.setVisible(true)
+      console.log('实时地震设为可见')
+    }
+    else {
+      vector_hour.setVisible(false)
+      vector_day.setVisible(false)
+      vector_week.setVisible(false)
+      vector_month.setVisible(false)
+      console.log('实时地震已隐藏')
+    }
+  })
+
+
+
+
+  var checkhour = document.getElementById('hour')
+  var checkday = document.getElementById('day')
+  var checkweek = document.getElementById('week')
+  var checkmonth = document.getElementById('month')
+
+  let controls = document.getElementById('earthquake_C_one')
+  controls.addEventListener('click', (event) => {
+    if (event.target.checked) {
+
+      //newlayer.setVisible(false) 
+      switch (event.target.id) {
+        case "hour":
+          checkday.checked = false
+          checkweek.checked = false
+          checkmonth.checked = false
+          map.removeLayer(vector_day)
+          map.removeLayer(vector_week)
+          map.removeLayer(vector_month)
+          map.addLayer(vector_hour)
+
+
+          break;
+        case "day":
+          checkhour.checked = false
+          checkweek.checked = false
+          checkmonth.checked = false
+          map.removeLayer(vector_hour)
+          map.removeLayer(vector_week)
+          map.removeLayer(vector_month)
+          map.addLayer(vector_day)
+
+
+          break;
+        case "week":
+          checkday.checked = false
+          checkhour.checked = false
+          checkmonth.checked = false
+          map.removeLayer(vector_day)
+          map.removeLayer(vector_hour)
+          map.removeLayer(vector_month)
+          map.addLayer(vector_week)
+
+
+          break;
+        case "month":
+          checkday.checked = false
+          checkweek.checked = false
+          checkhour.checked = false
+          map.removeLayer(vector_day)
+          map.removeLayer(vector_week)
+          map.removeLayer(vector_hour)
+          map.addLayer(vector_month)
+
+
+          break;
+
+        default:
+          break;
+      }
+
+      Myaddinteraction()
+    }
+    else {
+      switch (event.target.id) {
+
+        case "hour":
+          map.removeLayer(vector_hour)
+          break;
+
+        case "day":
+          map.removeLayer(vector_day)
+          break;
+        case "week":
+          map.removeLayer(vector_week)
+          break;
+        case "month":
+          map.removeLayer(vector_month)
+          break;
+
+        default:
+          break;
+
+
+      }
+    }
+  })
+</script>
+
+<!-- 中国区域 -->
+<script>
+  var vector_25 = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      url: '/data/geojson/earthquake/2.5-4.4china2017-2022.5.1.json',
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+
+    }),
+    style: new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({
+          color: 'rgba(0, 255,0 , 0.2)'
+        })
+      })
+    })
+  })
+
+  var vector_45 = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      url: '/data/geojson/earthquake/4.5-6.4china2017-2022.5.1.json',
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+
+    }),
+    style: new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({
+          color: 'rgba(0, 0,255 , 0.2)'
+        })
+      })
+    })
+  })
+
+  var vector_65 = new ol.layer.Vector({
+    source: new ol.source.Vector({
+      url: '/data/geojson/earthquake/6.5+china2017-2022.5.1.json',
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+
+    }),
+    style: new ol.style.Style({
+      image: new ol.style.Circle({
+        radius: 5,
+        fill: new ol.style.Fill({
+          color: 'rgba(255, 0,0 , 0.2)'
+        })
+      })
+    })
+  })
+
+  var setv = document.getElementById('setV_C')
+  setv.addEventListener('click', (event) => {
+    if (event.target.checked) {
+      vector_25.setVisible(true)
+      vector_45.setVisible(true)
+      vector_65.setVisible(true)
+      console.log('中国地震设为可见')
+    }
+    else {
+      vector_25.setVisible(false)
+      vector_45.setVisible(false)
+      vector_65.setVisible(false)
+      console.log('中国地震已隐藏')
+    }
+  })
+
+  var check25 = document.getElementById('25')
+  var check45 = document.getElementById('45')
+  var check65 = document.getElementById('65')
+
+  let controls_C = document.getElementById('earthquake_C_two')
+  controls_C.addEventListener('click', (event) => {
+    if (event.target.checked) {
+
+      //newlayer.setVisible(false) 
+      switch (event.target.id) {
+        case "25":
+
+          map.addLayer(vector_25)
+          break;
+        case "45":
+
+          map.addLayer(vector_45)
+
+          break;
+        case "65":
+
+          map.addLayer(vector_65)
+
+          break;
+        default:
+          break;
+      }
+
+      Myaddinteraction()
+    }
+    else {
+      switch (event.target.id) {
+
+        case "25":
+          map.removeLayer(vector_25)
+          break;
+
+        case "45":
+          map.removeLayer(vector_45)
+          break;
+        case "65":
+          map.removeLayer(vector_65)
+          break;
+
+        default:
+          break;
+      }
+    }
+  })
+
+</script>
+
+<!-- InSAR -->
+<script>
+  var url_1, url_2, url_3, url_4
+
+  var insar1 = new ol.layer.Tile({
+  })
+  var insar2 = new ol.layer.Tile({
+
+
+  })
+  var insar3 = new ol.layer.Tile({
+
+
+  })
+  var insar4 = new ol.layer.Tile({
+
+  })
+
+  var set_InSAR = document.getElementById('set_InSAR')
+  set_InSAR.addEventListener('click', (event) => {
+    if (event.target.checked) {
+      insar1.setVisible(true)
+      insar2.setVisible(true)
+      insar3.setVisible(true)
+      insar4.setVisible(true)
+      console.log('InSAR设为可见')
+    }
+    else {
+      insar1.setVisible(false)
+      insar2.setVisible(false)
+      insar3.setVisible(false)
+      insar4.setVisible(false)
+      console.log('InSAR已隐藏')
+    }
+  })
+
+  var check1 = document.getElementById('insar_1')
+  var check2 = document.getElementById('insar_2')
+  var check3 = document.getElementById('insar_3')
+  var check4 = document.getElementById('insar_4')
+
+  let controls_InSAR = document.getElementById('InSAR')
+  controls_InSAR.addEventListener('click', (event) => {
+
+
+
+    if (event.target.checked) {
+
+      //newlayer.setVisible(false) 
+      switch (event.target.id) {
+        case "insar_1":
+          insar1.setSource(new ol.source.TileWMS({
+            url: url_1
+          }))
+          map.addLayer(insar1)
+          break;
+        case "inar_2":
+          insar2.setSource(new ol.source.TileWMS({
+            url: url_2
+          }))
+          map.addLayer(insar2)
+
+          break;
+        case "insar_3":
+          insar3.setSource(new ol.source.TileWMS({
+            url: url_3
+          }))
+          map.addLayer(insar3)
+
+          break;
+        case "insar_4":
+
+          map.addLayer(insar4)
+          insar4.setSource(new ol.source.TileWMS({
+            url: url_4
+          }))
+          break;
+        default:
+          break;
+      }
+
+      Myaddinteraction()
+    }
+    else {
+      switch (event.target.id) {
+
+        case "insar_1":
+          map.removeLayer(insar1)
+          break;
+
+        case "insar_2":
+          map.removeLayer(insar2)
+          break;
+        case "insar_3":
+          map.removeLayer(insar3)
+          break;
+        case "insar_4":
+          map.removeLayer(insar4)
+          break;
+
+        default:
+          break;
+      }
+    }
+  })
+</script>
+
+<!-- 形变场 -->
+<script>
+  var styleFunction = function (feature) {
+    var geometry = feature.getGeometry();
+    var property = feature.getProperties();
+    let dx = property['Ve_I']
+    let dy = property['Vn_I']
+    var rotation = Math.atan2(dy, dx);
+
+
+    var start = [geometry.getCoordinates()[0], geometry.getCoordinates()[1]]
+    var new_x = geometry.getCoordinates()[0] + dx / 25 //这里的指数得根据屏幕坐标进行调节
+    var new_y = geometry.getCoordinates()[1] + dy / 25
+    var end = [new_x, new_y]
+
+    var styles = [
+      new ol.style.Style({
+        stroke: new ol.style.Stroke({
+          color: 'blue',
+          width: 1.0,
+        }),
+        geometry: new ol.geom.LineString([start, end]),
+        //projection:'EPSG:4326',
+      })
+    ];
+
+    styles.push(new ol.style.Style({
+      geometry: new ol.geom.Point([new_x, new_y]),
+      //projection:'EPSG:4326',
+      image: new ol.style.Icon({
+        src: 'images/myarrow.png',
+        anchor: [0.75, 0.5],
+        rotateWithView: true,
+        rotation: -rotation,
+      }),
+    }))
+    return styles
+  }
+
+  var velocity = new ol.layer.Vector({
+
+    source: new ol.source.Vector({
+      url: 'data/geojson/velocity.geojson',
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+    }),
+
+    style: this.styleFunction
+  })
+  velocity.setOpacity(0.5)
+
+
+  function velocity_addinteraction() {
+
+    //设置点击后样式
+    var velocity_selectpoint = new ol.interaction.Select({
+      layers: [velocity],
+      multi: true,
+      //hitolerance:4,
+      style: new ol.style.Style({
+        //因为把image打成Image又浪费了我半个小时
+        image: new ol.style.Circle({
+          radius: 6,
+          fill: new ol.style.Fill({
+            color: 'red'
+          })
+        })
+      })
+    })
+
+    //设置点击后事件
+    velocity_selectpoint.on('select', function (p) {
+
+      var features = p.target.getFeatures().getArray()//获取真正的featrue元素
+
+      if (features.length > 0) {
+
+
+        var obj = features[0];
+        console.log(obj.get('type'));//显示类型
+        var coordinate = p.mapBrowserEvent.coordinate
+        var property = obj.getProperties()//获取真正的属性信息
+        var geometry = obj.getGeometry();//获取地理数据信息
+        var json_obj = eval(obj)
+
+        //下面是摸索到的在geojson里面引用数据的方法，不知道直接用csv会不会简单点
+        var ftype = property["type"]
+        var ftitle = property["title"]
+        var otitle = obj.get('title')//事实证明这种获取方法默认是在properties下的数据
+
+        //properties数据引用
+        var station = property['Station']
+        var Ve_I = property['Ve_I']
+        var Ve_E = property['Ve_E']
+        var dVe = property['dVe']
+        var Vn_I = property['Vn_I']
+        var Vn_E = property['Vn_E']
+        var dVn = property['dVn']
+        var Cen = property['Cen']
+
+
+        var url = property['url']
+        //geometry下的数据只能这样引用
+        var geotype = geometry.getType();
+        var geocoordinates = geometry.getCoordinates();
+        var jwd = ol.proj.transform(geocoordinates, 'EPSG:4326', 'EPSG:4326');
+        var fixed_1 = (jwd[0]).toFixed(3)
+        var fixed_2 = (jwd[1]).toFixed(3)
+
+        popup_content.innerHTML = `
+
+              <p>GPS站点：`+ station + `</p>
+              <p>经纬度坐标：`+ fixed_1 + `,` + fixed_2 + `</p>
+              
+              <p>基于ITRF2008</p>
+              <p>东方向形变速率：`+ Ve_I + ` mm/yr</p>
+              <p>北方向形变速率：`+ Vn_I + ` mm/yr</p>
+              
+              <p>基于欧亚板块</p>
+              <p>东方向形变速率：`+ Ve_E + ` mm/yr</p>
+              <p>北方向形变速率：`+ Vn_E + ` mm/yr</p>
+
+              <p>东方向速率不确定值：`+ dVe + ` mm/yr</p>
+              <p>北方向速率不确定值：`+ dVn + ` mm/yr</p>
+              <p>两方向相关指数:`+ Cen + `</p>
+
+`
+
+        overlay.setPosition(coordinate);//定义弹出框的位置
+        map.addOverlay(overlay)/*加入地图之中*/
+      }
+
+    })
+
+    map.addInteraction(velocity_selectpoint)
+  }
+  velocity_addinteraction()
+
+  var set_velocity = document.getElementById('set_Velocity')
+  set_velocity.addEventListener('click', (event) => {
+    if (event.target.checked) {
+      map.addLayer(velocity)
+      velocity.setVisible(true)
+      console.log('形变场已加入')
+    }
+    else {
+      map.removeLayer(velocity)
+      console.log('InSAR已隐藏')
+    }
+  })
+
+</script>
+
+<!-- 筛选部分 -->
+<script>
+
+  var select_source = select_layer.getSource()
+
+  function selectAdd() {
+
+
+    select_layer.setSource(select_source)
+    select_source.clear()
+
+
+    var help = 1
+    var layers = map.getLayers().getArray()
+    layers.forEach(function (elayer) {
+      if (help > 2) {
+
+        elayer.setVisible(false);
+
+        var estyle = elayer.getStyle()
+        var esource = elayer.getSource()
+
+        var searchFeatures = esource.getFeatures()
+
+        //参数
+        var Start_Date = document.getElementById('start_y').value + '-' + document.getElementById('start_m').value + '-' + document.getElementById('start_d').value
+        var End_Date = document.getElementById('end_y').value + '-' + document.getElementById('end_m').value + '-' + document.getElementById('end_d').value
+        var startdate = new Date(Start_Date)
+        var enddate = new Date(End_Date)
+
+        var Min_mag = document.getElementById('start_Mag').value
+        var Max_mag = document.getElementById('end_Mag').value
+
+        searchFeatures.forEach(function (item) {
+
+          item.setStyle(estyle)
+          var mag = item.get('mag')
+          var time = item.get('time')
+          var data = format(time)
+
+          if (mag >= Min_mag && mag <= Max_mag && time >= startdate.getTime() && time <= enddate.getTime()) {
+            select_source.addFeature(item)
+            console.log(data)
+          }
+        });
+
+      }
+      help = help + 1
+    })
+    select_layer.setVisible(true);
+  }
+  //4.22凌晨我不得不记录一下我的发现
+  //当不管你怎么clear一个source，它由layer定义而来，但它的clear并不会影响源layer的feature，你的各种没有涉及到其中feature的函数操纵都只是对sorce的操作
+  //直到你涉及到了feature,如用这个feature往里面加过要素，从此便相关联，以更新其中的feature要素
+  //所以只要是我第一次使用这个function，clear是没有用的，所以select出来的要素会覆盖掉原要素，没有被select的要素则是原style显示出来
+  //因为对架构理解不透彻引起的debug到了凌晨四点半
+  //其实解决方案很简单，如把初始定义时的url注释掉.....我一开始就里面没有元素，所以第一次没链接上也没关系
+
+  function selectOff() {
+    select_layer.setVisible(false);
+    var layers = map.getLayers().getArray()
+    var help = 1
+    layers.forEach(function (elayer) {
+      if (help > 2) {
+        elayer.setVisible(true)
+      }
+      help = help + 1
+    })
+
+  }
+</script>
+
+<!-- 绘制Echarts部分 -->
+<script>
+  function draw() {
+
+    var xdata = [0, 0, 0, 0, 0]
+    var count1, coun2, count3, count4, count5
+    // 统计获取绘图数据
+    var chart_source = select_layer.getSource()
+    var chart_features = chart_source.getFeatures()
+
+    chart_features.forEach(function (item) {
+
+      mag = item.get('mag')
+      if (mag <= 3.4 && mag >= 2.5) { xdata[0] = xdata[0] + 1 }
+      if (mag <= 4.4 && mag >= 3.5) { xdata[1] = xdata[1] + 1 }
+      if (mag <= 5.4 && mag >= 4.5) { xdata[2] = xdata[2] + 1 }
+      if (mag <= 6.4 && mag >= 5.5) { xdata[3] = xdata[3] + 1 }
+      if (mag >= 6.5) { xdata[4] = xdata[4] + 1 }
+    })
+
+
+
+    var magchart_1 = echarts.init(document.getElementById('Mag_Echarts_1'))
+
+    var option_mag = {
+      title: {
+        text: '震级分布直方图'
+      },
+      tooltip: {},
+      legend: {
+        data: ['次数']
+      },
+      xAxis: {
+        data: ["2.5-3.4", "3.5-4.4", "4.5-5.4", "5.5-6.5", ">6.5"]
+      },
+      yAxis: {},
+      series: [{
+        name: '次数',
+        type: 'bar',
+        data: xdata
+      }]
+    }
+    magchart_1.setOption(option_mag)
+
+    var magchart_2 = echarts.init(document.getElementById('Mag_Echarts_2'))
+    magchart_2.setOption({
+      series: [
+        {
+          name: '震级分布饼图',
+          type: 'pie',    // 设置图表类型为饼图
+          radius: '55%',  // 饼图的半径，外半径为可视区尺寸（容器高宽中较小一项）的 55% 长度。
+          data: [          // 数据数组，name 为数据项名称，value 为数据项值
+            { value: xdata[0], name: '2.5-3.4' },
+            { value: xdata[1], name: '3.5-4.4' },
+            { value: xdata[2], name: '4.5-5.4' },
+            { value: xdata[3], name: '5.5-6.4' },
+            { value: xdata[4], name: '>6.5' }
+          ]
+        }
+      ]
+    })
+  }
+</script>
+
+
+
+<!-- 弹窗脚本 -->
+<script>
+  //接下来设置popup弹窗显示要素属性信息
+  var popup_container = document.getElementById('popup')
+  var popup_content = document.getElementById('popup-content')
+  var popup_closer = document.getElementById('popup-closer')
+
+  //定义一个overlay用来显示popup
+  var overlay = new ol.Overlay({
+    element: popup_container,
+    autoPan: true,
+    autoPanAnimation: {
+      duration: 250
+    }
+  })
+
+  //定义关闭popup的控件
+  popup_closer.onclick = function () {
+    overlay.setPosition(undefined);
+    popup_closer.blur();
+    return false;
+  }
+
+  //这里小放一个时间戳转换工具
+  function add0(m) { return m < 10 ? '0' + m : m }
+  function format(shijianchuo) {
+    //shijianchuo是整数，否则要parseInt转换
+    var time = new Date(shijianchuo);
+    var y = time.getFullYear();
+    var m = time.getMonth() + 1;
+    var d = time.getDate();
+    var h = time.getHours();
+    var mm = time.getMinutes();
+    var s = time.getSeconds();
+    return y + '-' + add0(m) + '-' + add0(d) + ' ' + add0(h) + ':' + add0(mm) + ':' + add0(s);
+  }
+
+  //!!定义一个这样的自己的添加互动的函数很关键。
+  //它让我可以使用它在切换了不同vector之后可以刷新我的select的图层对应到当前图层，只需要在切换函数里使用该函数即可
+  function Myaddinteraction() {
+
+    var presentLayer = map.getLayers().getArray()//获得当前vector图层
+
+    //设置点击后样式
+    var selectpoint = new ol.interaction.Select({
+      layers: [presentLayer[1], presentLayer[2], presentLayer[3], presentLayer[4], presentLayer[5]],
+      multi: true,
+      //hitolerance:4,
+      style: new ol.style.Style({
+        //因为把image打成Image又浪费了我半个小时
+        image: new ol.style.Circle({
+          radius: 6,
+          fill: new ol.style.Fill({
+            color: 'red'
+          })
+        })
+      })
+    })
+
+
+    //设置点击后事件
+    selectpoint.on('select', function (p) {
+
+      var features = p.target.getFeatures().getArray()//获取真正的featrue元素
+
+      if (features.length > 0) {
+
+        var obj = features[0];
+        console.log(obj.get('type'));//显示类型
+        console.log(obj)
+        var coordinate = p.mapBrowserEvent.coordinate
+        var property = obj.getProperties();//获取真正的属性信息
+        var geometry = obj.getGeometry();//获取地理数据信息
+        var json_obj = eval(obj)
+
+        //下面是摸索到的在geojson里面引用数据的方法，不知道直接用csv会不会简单点
+        var ftype = property["type"]
+        var ftitle = property["title"]
+        var otitle = obj.get('title')//事实证明这种获取方法默认是在properties下的数据
+
+        //properties数据引用
+        var time = property['time']
+        mytime = format(time)
+        var place = property["place"]
+        var level = property["mag"]
+
+        var url = property['url']
+        //geometry下的数据只能这样引用
+        var geotype = geometry.getType();
+        var geocoordinates = geometry.getCoordinates();
+        var jwd = ol.proj.transform(geocoordinates, 'EPSG:4326', 'EPSG:4326');
+        var fixed_1 = (jwd[0]).toFixed(3)
+        var fixed_2 = (jwd[1]).toFixed(3)
+
+        var insar_num = property['insar_num']
+        var insar
+        if (insar_num != null) {
+          insar = property['insar']
+          url_1 = insar[0]
+          url_2 = insar[1]
+          url_3 = insar[2]
+          url_4 = insar[3]
+        }
+        else {
+          insar_num = "0"
+          insar = null
+        }
+
+        var tsunami = property['tsunami']
+        var rms = property['rms']
+
+        var alert = property['alert']
+        if (alert == "green") { alert = "绿色" }
+        if (alert == "yellow") { alert = "黄色" }
+        if (alert == "orange") { alert = "橙色" }
+        if (alert == "red") { alert = "红色" }
+
+        if (tsunami == 0) { tsunami = "否" } else { tsunami = "是" }
+        var data_detail = document.getElementById('data_detail')
+        var innerHTML = `
+        <h3>`+ ftitle + `</h3>
+     
+        <p>&nbsp</p>
+        <p>海啸：`+ tsunami + `&nbsp&nbsp&nbsp&nbspRMS值：` + rms + `</p>
+        <p>预警：`+ alert + `</p>
+        <p>InSAR：`+ insar_num + `</p>
+    
+        `
+        data_detail.innerHTML = innerHTML
+
+
+
+
+        popup_content.innerHTML = `
+                    
+                    
+                    <p>时间：`+ mytime + `</p>
+                    <p>地点：`+ place + `</p>
+                    <p>震级：`+ level + `</p>
+                    <p>坐标：`+ fixed_1 + `,` + fixed_2 + `</p>
+                    <div>
+                      详情：
+                      <a href="`+ url + `">link</a>
+                    </div>
+                    `
+
+        overlay.setPosition(coordinate);//定义弹出框的位置
+        map.addOverlay(overlay)/*加入地图之中*/
+      }
+
+    })
+
+    map.addInteraction(selectpoint)
+  }
+  Myaddinteraction()
+
+</script>
+
+</html>
