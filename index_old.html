@@ -1,0 +1,80 @@
+<!DOCTYPE HTML
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <title>This is a test</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <!-- 强制360浏览器用WebKit内核 -->
+    <meta name="renderer" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link type="text/css" rel="stylesheet" href="css/style.css" />
+    <link href="images/title.ico" rel="shortcut icon" />
+    <!-- 开源库jQuery -->
+    <script src="libs/jquery-1.11.2.min.js"></script>
+    <!-- 系统首页功能库 -->
+    <script type="text/javascript" src="js/init.js"></script>
+
+    
+
+    <link href="libs/ol.css" rel="stylesheet" type="text/css" />
+    <script src="libs/ol.js" type="text/javascript"></script>
+
+
+    <style type="text/css">
+        #searchbar {
+            margin-left: 266px;
+            margin-top: 11px;
+            position: absolute;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="header">
+        <a class="logo">
+            <img src="images/logo.png" />
+            <span> 地壳形变监测成果在线</span>
+        </a>
+
+    
+    </div>
+    <div id="content">
+        <div class="leftsidebar_box">
+            <div class="line"></div>
+            <dl>
+                <dt onclick="setCore('earthquake', 'function')">回到主视图</dt>
+            </dl>
+            <dl class="control">
+                <dt class="first_dt">全球地震数据</dt>
+                <dd onclick="setCore('earthquake','function')">实时震点数据</dd>
+                <dd onclick="setCore('heatmap','function')">实时热力图</dd>
+            </dl>
+        
+            <dl class="control">
+                <dt class="first_dt">中国地震数据</dt>
+                <dd onclick="setCore('china_earthquake', 'function')">历年地震数据</dd>
+                <dd onclick="setCore('china_change', 'map')">中国地震形变趋势图</dd>
+                <dd onclick="setCore('china_heatmap', 'map')">中国地震热力图</dd>
+                <dd onclick="setCore('china_insar', 'function')">中国地震insar监测</dd>
+            </dl>
+
+
+        </div>
+        <div class="iframe_wrapper">
+            <iframe id="container_iframe" name="container_iframe" scrolling="no">
+
+                
+
+            </iframe>
+        </div>
+    </div>
+
+   
+</body>
+
+</html>
