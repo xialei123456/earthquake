@@ -15,6 +15,8 @@
   <script src="libs/jquery-1.11.2.min.js"></script>
   <!-- fileSaver开源库，用于保存数据 -->
   <script src="libs/FileSaver.js"></script>
+  <!-- 百度API实现搜索定位 -->
+  <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=kB5yeVizxgKa82lXGOdvTiEpyzPeEzSx"></script>
 </head>
 <style>
   #header {
@@ -179,7 +181,7 @@
 
   <div id="header">
 
-    <h1 id="title"> <strong>地壳形变数据在线监测管理系统</strong></h1>
+    <h1 id="title"> <strong>地壳形变监测成果在线管理系统</strong></h1>
   </div>
 
   <input type="checkbox" id="check">
@@ -245,8 +247,18 @@
       <li><a href="#">
           <!-- <i class="fa fa-telegram"></i> -->
           <strong style="font-size: larger;">中国区域形变场</strong>
-          <input type="checkbox" id="set_Velocity">
-        </a></li>
+          <input type="checkbox" id="set_Velocity" checked>
+        </a>
+      </li>
+
+      <div id="Velocity">
+        <a>
+          参考系：
+          ITRF2008<input type="checkbox" id="velocity_1"> &nbsp
+          欧亚大陆<input type="checkbox" id="velocity_2"> &nbsp
+        </a>
+      </div>
+
       <li><a href="#"><i class="fa fa-address-book"></i>关于我们</a></li>
     </ul>
   </div>
@@ -288,14 +300,34 @@
           type="number" style="width:35px" value="6.5" id="end_Mag" step="0.1">
       </p>
       <hr>
-      <input type="button" value="筛选并显示" onclick="selectAdd()"
-        style="margin-top: 5px;margin-left: 5px; height: 30px; width: 88px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
-      <input type="button" value="移除并恢复" onclick="selectOff()"
-        style="margin-top: 5px; margin-bottom: 5px; height: 30px; width: 88px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
-      <input type="button" value="绘制统计图" onclick="draw()"
-        style="margin-top: 5px; height: 30px; width: 88px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
-      <input type="button" value="保存数据" onclick="selectSave()"
-        style="margin-top: 5px; height: 30px; width: 70px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+      <p style="margin:5px;">
+        城市名称：<input type="text" style="width:80px ;height:20px" id="cityname">
+        <input type="button" value="搜索" onclick="myLocation()"
+          style="margin-top: 5px; height: 30px; width: 35px;font-size: 16px; font-family: '宋体'; background-color: #e9e4a0; border: rgba(70, 68, 68, 0.9);" />
+        <input type="button" value="定位" id="spin"
+          style="margin-top: 5px; height: 30px; width: 35px;font-size: 16px; font-family: '宋体'; background-color: #e9e4a0; border: rgba(70, 68, 68, 0.9);" />
+      </p>
+      <HR>
+
+      <p>
+        <input type="button" value="筛选并显示" onclick="selectAdd()"
+          style="margin-top: 5px;margin-left: 5px; height: 30px; width: 88px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+
+        <input type="button" value="绘制统计图" onclick="draw()"
+          style="margin-top: 5px; height: 30px; width: 88px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+        <input type="button" value="绘制热力图" onclick="heatmap()"
+          style="margin-top: 5px; height: 30px; width: 88px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+        <input type="button" value="移除" onclick="selectOff()"
+          style="margin-top: 5px; margin-bottom: 5px; height: 30px; width: 50px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+        <input type="button" value="保存" onclick="selectSave()"
+          style="margin-top: 5px; height: 30px; width: 50px;font-size: 16px; font-family: '宋体'; background-color: #a0d2e9; border: rgba(70, 68, 68, 0.9);" />
+      </p>
+      <div style="margin-left: 5px;">
+        <label class="lb">热点半径：</label><input style="width: 70px;" type="range" id="radius" min="1" max="50" step="1"
+          value="10" />
+        <label class="lb">模糊尺寸：</label><input style="width: 70px;" type="range" id="blur" min="1" max="50" step="1"
+          value="15" />
+      </div>
 
 
 
@@ -303,7 +335,9 @@
       <div id="Mag_Echarts_1" style="margin-left:5px; width: 100%; height: 250px; background-color: beige;"></div>
       <div id="Mag_Echarts_2" style="margin-left:5px; width: 100%; height: 250px; background-color: beige;"></div>
       <hr>
-      <div id="data_detail" style="display: inline-block;text-align:left; margin: 10px; height: 150px; width: 100%;">
+
+      <div id="data_detail"
+        style="display: inline-block;text-align:left; margin: 10px; height:max-content; width: 100%;">
       </div>
 
 
@@ -318,13 +352,13 @@
       format: new ol.format.GeoJSON({ extractStyles: false }),
     })
   })
-  var chinaextent = [12031983.4973, 6.1474, 12032067.4593, 62.1428]
+  var chinaextent = [7938658, 1055130, 16125429, 7345809]
   var map = new ol.Map({
     target: 'map',
     layers: [new ol.layer.Tile({ source: new ol.source.OSM() }), select_layer],
     view: new ol.View({
       center: ol.extent.getCenter(chinaextent),
-      projection: 'EPSG:4326',
+      projection: 'EPSG:3857',
       zoom: 4.5
     }),
     controls: ol.control.defaults().extend([
@@ -348,7 +382,7 @@
         layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
         view: new ol.View({
           center: [0, 0],
-          projection: 'EPSG:4326',
+          projection: 'EPSG:3857',
           zoom: 4
         }),
       }),
@@ -778,7 +812,7 @@
 
 <!-- 形变场 -->
 <script>
-  var styleFunction = function (feature) {
+  var styleFunction_1 = function (feature) {
     var geometry = feature.getGeometry();
     var property = feature.getProperties();
     let dx = property['Ve_I']
@@ -787,8 +821,8 @@
 
 
     var start = [geometry.getCoordinates()[0], geometry.getCoordinates()[1]]
-    var new_x = geometry.getCoordinates()[0] + dx / 25 //这里的指数得根据屏幕坐标进行调节
-    var new_y = geometry.getCoordinates()[1] + dy / 25
+    var new_x = geometry.getCoordinates()[0] + dx * 3000 //这里的指数得根据屏幕坐标进行调节
+    var new_y = geometry.getCoordinates()[1] + dy * 3000
     var end = [new_x, new_y]
 
     var styles = [
@@ -806,7 +840,7 @@
       geometry: new ol.geom.Point([new_x, new_y]),
       //projection:'EPSG:4326',
       image: new ol.style.Icon({
-        src: 'images/myarrow.png',
+        src: 'images/myarrow_blue.png',
         anchor: [0.75, 0.5],
         rotateWithView: true,
         rotation: -rotation,
@@ -815,23 +849,70 @@
     return styles
   }
 
-  var velocity = new ol.layer.Vector({
+  var styleFunction_2 = function (feature) {
+    var geometry = feature.getGeometry();
+    var property = feature.getProperties();
+    let dx = property['Ve_E']
+    let dy = property['Vn_E']
+    var rotation = Math.atan2(dy, dx);
+
+
+    var start = [geometry.getCoordinates()[0], geometry.getCoordinates()[1]]
+    var new_x = geometry.getCoordinates()[0] + dx * 14000 //这里的指数得根据屏幕坐标进行调节
+    var new_y = geometry.getCoordinates()[1] + dy * 14000
+    var end = [new_x, new_y]
+
+    var styles = [
+      new ol.style.Style({
+        stroke: new ol.style.Stroke({
+          color: 'red',
+          width: 1.0,
+        }),
+        geometry: new ol.geom.LineString([start, end]),
+        //projection:'EPSG:4326',
+      })
+    ];
+
+    styles.push(new ol.style.Style({
+      geometry: new ol.geom.Point([new_x, new_y]),
+      //projection:'EPSG:4326',
+      image: new ol.style.Icon({
+        src: 'images/myarrow_red.png',
+        anchor: [0.75, 0.5],
+        rotateWithView: true,
+        rotation: -rotation,
+      }),
+    }))
+    return styles
+  }
+
+  var velocity_1 = new ol.layer.Vector({
 
     source: new ol.source.Vector({
       url: 'data/geojson/velocity.geojson',
       format: new ol.format.GeoJSON({ extractStyles: false }),
     }),
 
-    style: this.styleFunction
+    style: this.styleFunction_1
   })
-  velocity.setOpacity(0.5)
+  velocity_1.setOpacity(0.5)
 
+  var velocity_2 = new ol.layer.Vector({
+
+    source: new ol.source.Vector({
+      url: 'data/geojson/velocity.geojson',
+      format: new ol.format.GeoJSON({ extractStyles: false }),
+    }),
+
+    style: this.styleFunction_2
+  })
+  velocity_2.setOpacity(0.5)
 
   function velocity_addinteraction() {
 
     //设置点击后样式
     var velocity_selectpoint = new ol.interaction.Select({
-      layers: [velocity],
+      layers: [velocity_1, velocity_2],
       multi: true,
       //hitolerance:4,
       style: new ol.style.Style({
@@ -839,7 +920,7 @@
         image: new ol.style.Circle({
           radius: 6,
           fill: new ol.style.Fill({
-            color: 'red'
+            color: 'yellow'
           })
         })
       })
@@ -880,9 +961,22 @@
         //geometry下的数据只能这样引用
         var geotype = geometry.getType();
         var geocoordinates = geometry.getCoordinates();
-        var jwd = ol.proj.transform(geocoordinates, 'EPSG:4326', 'EPSG:4326');
+        var jwd = ol.proj.toLonLat(geocoordinates, 'EPSG:3857');
         var fixed_1 = (jwd[0]).toFixed(3)
         var fixed_2 = (jwd[1]).toFixed(3)
+
+        data_detail.innerHTML = `
+
+<strong><p>GPS站点：`+ station + `</p></strong>
+<p>&nbsp</p>
+<p>经纬度坐标：`+ fixed_1 + `,` + fixed_2 + `</p>
+
+
+<p>东方向速率不确定值：`+ dVe + ` mm/yr</p>
+<p>北方向速率不确定值：`+ dVn + ` mm/yr</p>
+<p>两方向相关指数:`+ Cen + `</p>
+
+`
 
         popup_content.innerHTML = `
 
@@ -916,13 +1010,55 @@
   var set_velocity = document.getElementById('set_Velocity')
   set_velocity.addEventListener('click', (event) => {
     if (event.target.checked) {
-      map.addLayer(velocity)
-      velocity.setVisible(true)
+      velocity_2.setVisible(true)
+      velocity_1.setVisible(true)
       console.log('形变场已加入')
     }
     else {
-      map.removeLayer(velocity)
+      velocity_1.setVisible(false)
+      velocity_2.setVisible(false)
       console.log('InSAR已隐藏')
+    }
+  })
+
+  var velocity1 = document.getElementById('velocity_1')
+  var velocity2 = document.getElementById('velocity_2')
+
+  let controls_Velocity = document.getElementById('Velocity')
+  controls_Velocity.addEventListener('click', (event) => {
+
+    if (event.target.checked) {
+
+      //newlayer.setVisible(false) 
+      switch (event.target.id) {
+        case "velocity_1":
+
+          map.addLayer(velocity_1)
+          break;
+        case "velocity_2":
+
+          map.addLayer(velocity_2)
+
+          break;
+        default:
+          break;
+      }
+
+      velocity_addinteraction()
+    }
+    else {
+      switch (event.target.id) {
+
+        case "velocity_1":
+          map.removeLayer(velocity_1)
+          break;
+
+        case "velocity_2":
+          map.removeLayer(velocity_2)
+          break;
+        default:
+          break;
+      }
     }
   })
 
@@ -988,6 +1124,7 @@
 
   function selectOff() {
     select_layer.setVisible(false);
+    map.removeLayer(heat)
     var layers = map.getLayers().getArray()
     var help = 1
     layers.forEach(function (elayer) {
@@ -1066,23 +1203,107 @@
 
 <!-- 保存筛选数据部分 -->
 <script>
-  function selectSave(){
-    var source=select_layer.getSource()
-    var features=source.getFeatures()
+  function selectSave() {
+    var source = select_layer.getSource()
+    var features = source.getFeatures()
 
-    var GeoJSON_OBJ=new ol.format.GeoJSON()
-    var jsonString=GeoJSON_OBJ.writeFeatures(features)
+    var GeoJSON_OBJ = new ol.format.GeoJSON()
+    var jsonString = GeoJSON_OBJ.writeFeatures(features)
     console.log(jsonString)
 
 
-   
-				const textBlob = new Blob([jsonString], {
-					type: "text/plain;charset=utf-8"
-				});
-				saveAs(textBlob,'MySelect.json');
+
+    const textBlob = new Blob([jsonString], {
+      type: "text/plain;charset=utf-8"
+    });
+    saveAs(textBlob, 'MySelect.json');
 
 
   }
+</script>
+
+<!-- 热力图试绘制 -->
+<script>
+  var blur = document.getElementById('blur');
+  var radius = document.getElementById('radius');
+  var heat = new ol.layer.Heatmap({
+    //矢量数据源
+    source: new ol.source.Vector({
+      format: new ol.format.KML({
+        extractStyles: false
+      }),
+    }),
+    //热点半径
+    radius: parseInt(radius.value, 10),
+    //模糊尺寸
+    blur: parseInt(blur.value, 10)
+  });
+
+  function set(vector) {
+    //分别为另个参数设置控件（input）添加事件监听，动态设置热点图的参数
+    radius.addEventListener('input', function () {
+      //设置热点图层的热点半径
+      vector.setRadius(parseInt(radius.value, 10));
+    });
+    blur.addEventListener('input', function () {
+      //设置热点图层的模糊尺寸
+      vector.setBlur(parseInt(blur.value, 10));
+    });
+  }
+  function heatmap() {
+
+    var source = select_layer.getSource()
+    var features = source.getFeatures()
+
+
+    var heatsource = heat.getSource()
+    heatsource.clear()
+    features.forEach(function (item) {
+      if (item.get('mag') >= 5) {
+        heatsource.addFeature(item)
+      }
+    })
+
+    set(heat)
+    map.addLayer(heat)
+  }
+</script>
+
+<!-- 定位部分 -->
+<script>
+  var baidumap = new BMap.Map("allmap");
+  var lng; var lat
+  //开始搜索功能的添加
+  function myLocation() {
+    var localSearch = new BMap.LocalSearch(baidumap);
+    //查询城市坐标的方法
+    var keyword = document.getElementById("cityname").value;
+    localSearch.setSearchCompleteCallback(function (searchResult) {
+      var poi = searchResult.getPoi(0);
+      console.log(searchResult);
+
+      lng = poi.point.lng; //获取经度和纬度，将结果显示在文本框中
+      lat = poi.point.lat; //获取经度和纬度，将结果显示在文本框中
+    });
+    localSearch.search(keyword);
+  }
+</script>
+<script>
+  var getspin = document.getElementById("spin");
+  getspin.addEventListener("click", function () {
+    var a = lng;
+    var b = lat;
+    var thisview = map.getView();
+    var center = thisview.getCenter();
+    var weizhi = ol.proj.fromLonLat([a, b]);
+    var myview = new ol.View({
+      center: weizhi,
+      projection: 'EPSG:3857',
+      zoom: 6.5
+    })
+    map.setView(myview)
+
+  })
 </script>
 
 
@@ -1156,7 +1377,7 @@
         var obj = features[0];
         console.log(obj.get('type'));//显示类型
 
-        
+
 
         var coordinate = p.mapBrowserEvent.coordinate
         var property = obj.getProperties();//获取真正的属性信息
@@ -1178,7 +1399,7 @@
         //geometry下的数据只能这样引用
         var geotype = geometry.getType();
         var geocoordinates = geometry.getCoordinates();
-        var jwd = ol.proj.transform(geocoordinates, 'EPSG:4326', 'EPSG:4326');
+        var jwd = ol.proj.toLonLat(geocoordinates, 'EPSG:3857');
         var fixed_1 = (jwd[0]).toFixed(3)
         var fixed_2 = (jwd[1]).toFixed(3)
 
