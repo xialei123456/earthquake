@@ -119,7 +119,7 @@
                 "type": "earthquake",
                 "title": "M 6.6 - northern Qinghai, China",
                 "insar_num":1.0,
-                "insar":["http://localhost:8080/geoserver/earthquake/wms?service=WMS&version=1.1.0&request=GetMap&layers=earthquake%3Ageo_20211229_20220110&bbox=99.4368118309692%2C38.94750026082225%2C102.77578546902164%2C41.30750025138226&width=768&height=542&srs=EPSG%3A404000&styles=&format=application/openlayers"]
+                "insar":["http://localhost:8080/geoserver/earthquake/wms?service=WMS&version=1.1.0&request=GetMap&layers=earthquake%3A2021-12-29_2022-01-10_1&bbox=1.1069517401951447E7%2C4714273.46093926%2C1.1440860668503966E7%2C5057927.683282839&width=768&height=710&srs=EPSG%3A3857&styles=&format=application/openlayers"]
             },
             "geometry": {
                 "type": "Point",
